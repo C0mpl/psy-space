@@ -1,0 +1,200 @@
+//
+//  ScheduleTab.swift
+//  Seans
+//
+//  Created by Claude on 23.08.2026.
+//
+
+import SwiftUI
+
+struct ScheduleTab: View {
+    @Environment(AvailabilityRepository.self) private var availabilityRepo
+    @Environment(BookingRepository.self) private var bookingRepo
+    @State private var showingSettings = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                statsSection
+
+                upcomingSection
+
+                weeklyScheduleSection
+            }
+            .navigationTitle("Розклад")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Налаштування", systemImage: "gearshape") {
+                        showingSettings = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showingSettings) {
+                AvailabilitySettingsView(repository: availabilityRepo)
+            }
+        }
+    }
+
+    // MARK: - Sections
+
+    private var statsSection: some View {
+        Section {
+            HStack {
+                StatCard(
+                    title: "Цього тижня",
+                    value: "\(bookingRepo.sessionsThisWeek)",
+                    subtitle: "з \(availabilityRepo.settings.maxSessionsPerWeek)",
+                    color: .seansPrimary
+                )
+
+                StatCard(
+                    title: "Тривалість",
+                    value: "\(availabilityRepo.settings.sessionDurationMinutes)",
+                    subtitle: "хвилин",
+                    color: .seansSecondary
+                )
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    private var upcomingSection: some View {
+        Section("Найближчі сеанси") {
+            let upcoming = bookingRepo.upcomingBookings()
+
+            if upcoming.isEmpty {
+                Text("Немає запланованих сеансів")
+                    .foregroundStyle(Color.seansTextSecondary)
+            } else {
+                ForEach(upcoming.prefix(5)) { booking in
+                    BookingRow(booking: booking)
+                }
+            }
+        }
+    }
+
+    private var weeklyScheduleSection: some View {
+        Section("Робочі дні") {
+            ForEach(Weekday.allCases) { day in
+                WeekdayRow(
+                    day: day,
+                    schedule: availabilityRepo.settings.weeklySchedule.schedule(for: day.calendarWeekday)
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Stat Card
+
+private struct StatCard: View {
+    let title: String
+    let value: String
+    let subtitle: String
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: Spacing.xs) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(Color.seansTextSecondary)
+
+            Text(value)
+                .font(.system(.title, design: .rounded, weight: .bold))
+                .foregroundStyle(color)
+
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundStyle(Color.seansTextSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(Spacing.md)
+        .background(Color.seansCardBackground)
+        .clipShape(.rect(cornerRadius: CornerRadius.md))
+    }
+}
+
+// MARK: - Booking Row
+
+private struct BookingRow: View {
+    let booking: Booking
+
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(booking.clientName)
+                    .font(.headline)
+
+                Text(booking.dateFormatted)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.seansTextSecondary)
+            }
+
+            Spacer()
+
+            Text(booking.startTime.formatted(date: .omitted, time: .shortened))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.seansPrimary)
+        }
+    }
+}
+
+// MARK: - Weekday Row
+
+private struct WeekdayRow: View {
+    let day: Weekday
+    let schedule: DaySchedule?
+
+    var body: some View {
+        HStack {
+            Text(day.ukrainianName)
+                .foregroundStyle(Color.seansTextPrimary)
+
+            Spacer()
+
+            if let schedule, schedule.isEnabled {
+                Text("\(schedule.startTime.formatted) - \(schedule.endTime.formatted)")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.seansTextSecondary)
+            } else {
+                Text("Вихідний")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.seansTextSecondary)
+            }
+        }
+    }
+}
+
+// MARK: - Weekday Enum
+
+enum Weekday: Int, CaseIterable, Identifiable {
+    case monday = 2
+    case tuesday = 3
+    case wednesday = 4
+    case thursday = 5
+    case friday = 6
+    case saturday = 7
+    case sunday = 1
+
+    var id: Int { rawValue }
+    var calendarWeekday: Int { rawValue }
+
+    var ukrainianName: String {
+        switch self {
+        case .monday: "Понеділок"
+        case .tuesday: "Вівторок"
+        case .wednesday: "Середа"
+        case .thursday: "Четвер"
+        case .friday: "П'ятниця"
+        case .saturday: "Субота"
+        case .sunday: "Неділя"
+        }
+    }
+}
+
+#Preview {
+    ScheduleTab()
+        .environment(AvailabilityRepository())
+        .environment(BookingRepository())
+}
