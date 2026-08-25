@@ -102,19 +102,30 @@ final class AvailabilityRepository {
         var currentTime = daySchedule.startTime.toDate(on: date, calendar: calendar)
         let endTime = daySchedule.endTime.toDate(on: date, calendar: calendar)
 
+        // Count existing confirmed bookings for this day
+        let confirmedBookings = existingBookings.filter { $0.status != .cancelled }
+        let bookedCount = confirmedBookings.count
+
+        // Check if daily limit is reached
+        let dailyLimitReached = daySchedule.maxSessionsPerDay.map { bookedCount >= $0 } ?? false
+
         while currentTime.addingTimeInterval(TimeInterval(sessionDuration * 60)) <= endTime {
             let slotEnd = currentTime.addingTimeInterval(TimeInterval(sessionDuration * 60))
 
-            let isBooked = existingBookings.contains { booking in
-                booking.startTime == currentTime && calendar.isDate(booking.date, inSameDayAs: date)
+            let currentTimestamp = currentTime.timeIntervalSince1970
+            let isBookedByTime = confirmedBookings.contains { booking in
+                abs(booking.startTime.timeIntervalSince1970 - currentTimestamp) < 60 // Within 1 minute
             }
+
+            // Slot is unavailable if it's booked OR if daily limit is reached
+            let isUnavailable = isBookedByTime || (dailyLimitReached && !isBookedByTime)
 
             let slot = TimeSlot(
                 id: "\(date.timeIntervalSince1970)-\(currentTime.timeIntervalSince1970)",
                 date: date,
                 startTime: currentTime,
                 endTime: slotEnd,
-                isBooked: isBooked
+                isBooked: isUnavailable
             )
             slots.append(slot)
 

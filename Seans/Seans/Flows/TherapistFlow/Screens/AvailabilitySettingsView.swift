@@ -18,6 +18,8 @@ struct AvailabilitySettingsView: View {
 
                 scheduleSection
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.seansBackground)
             .navigationTitle("Налаштування")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -71,13 +73,17 @@ struct AvailabilitySettingsView: View {
             ForEach(Weekday.allCases) { day in
                 DayScheduleRow(
                     day: day,
-                    schedule: repository.settings.weeklySchedule.schedule(for: day.calendarWeekday),
-                    onChange: { schedule in
-                        repository.updateDaySchedule(schedule, for: day.calendarWeekday)
-                    }
+                    schedule: scheduleBinding(for: day.calendarWeekday)
                 )
             }
         }
+    }
+
+    private func scheduleBinding(for weekday: Int) -> Binding<DaySchedule?> {
+        Binding(
+            get: { repository.settings.weeklySchedule.schedule(for: weekday) },
+            set: { repository.updateDaySchedule($0, for: weekday) }
+        )
     }
 }
 
@@ -85,50 +91,81 @@ struct AvailabilitySettingsView: View {
 
 private struct DayScheduleRow: View {
     let day: Weekday
-    let schedule: DaySchedule?
-    let onChange: (DaySchedule?) -> Void
+    @Binding var schedule: DaySchedule?
 
     @State private var isExpanded = false
-    @State private var isEnabled: Bool
-    @State private var startHour: Int
-    @State private var startMinute: Int
-    @State private var endHour: Int
-    @State private var endMinute: Int
 
-    init(day: Weekday, schedule: DaySchedule?, onChange: @escaping (DaySchedule?) -> Void) {
-        self.day = day
-        self.schedule = schedule
-        self.onChange = onChange
-        self._isEnabled = State(initialValue: schedule?.isEnabled ?? false)
-        self._startHour = State(initialValue: schedule?.startTime.hour ?? 9)
-        self._startMinute = State(initialValue: schedule?.startTime.minute ?? 0)
-        self._endHour = State(initialValue: schedule?.endTime.hour ?? 17)
-        self._endMinute = State(initialValue: schedule?.endTime.minute ?? 0)
-    }
+    private var isEnabled: Bool { schedule?.isEnabled ?? false }
+    private var startHour: Int { schedule?.startTime.hour ?? 9 }
+    private var startMinute: Int { schedule?.startTime.minute ?? 0 }
+    private var endHour: Int { schedule?.endTime.hour ?? 17 }
+    private var endMinute: Int { schedule?.endTime.minute ?? 0 }
+    private var maxSessions: Int? { schedule?.maxSessionsPerDay }
+    private var hasLimit: Bool { maxSessions != nil }
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(spacing: Spacing.md) {
-                Toggle("Робочий день", isOn: $isEnabled)
-                    .onChange(of: isEnabled) { _, newValue in
-                        updateSchedule()
+                Toggle("Робочий день", isOn: Binding(
+                    get: { isEnabled },
+                    set: { newValue in
+                        if newValue {
+                            schedule = makeSchedule()
+                        } else {
+                            schedule = nil
+                        }
                     }
+                ))
 
                 if isEnabled {
                     HStack {
                         Text("Початок")
                         Spacer()
-                        TimePicker(hour: $startHour, minute: $startMinute)
-                            .onChange(of: startHour) { _, _ in updateSchedule() }
-                            .onChange(of: startMinute) { _, _ in updateSchedule() }
+                        TimePicker(
+                            hour: Binding(
+                                get: { startHour },
+                                set: { schedule = makeSchedule(startHour: $0) }
+                            ),
+                            minute: Binding(
+                                get: { startMinute },
+                                set: { schedule = makeSchedule(startMinute: $0) }
+                            )
+                        )
                     }
 
                     HStack {
                         Text("Кінець")
                         Spacer()
-                        TimePicker(hour: $endHour, minute: $endMinute)
-                            .onChange(of: endHour) { _, _ in updateSchedule() }
-                            .onChange(of: endMinute) { _, _ in updateSchedule() }
+                        TimePicker(
+                            hour: Binding(
+                                get: { endHour },
+                                set: { schedule = makeSchedule(endHour: $0) }
+                            ),
+                            minute: Binding(
+                                get: { endMinute },
+                                set: { schedule = makeSchedule(endMinute: $0) }
+                            )
+                        )
+                    }
+
+                    Divider()
+
+                    Toggle("Обмежити кількість сеансів", isOn: Binding(
+                        get: { hasLimit },
+                        set: { newValue in
+                            schedule = makeSchedule(maxSessions: newValue ? 4 : nil)
+                        }
+                    ))
+
+                    if hasLimit {
+                        Stepper(
+                            "Макс. сеансів: \(maxSessions ?? 4)",
+                            value: Binding(
+                                get: { maxSessions ?? 4 },
+                                set: { schedule = makeSchedule(maxSessions: $0) }
+                            ),
+                            in: 1...12
+                        )
                     }
                 }
             }
@@ -139,9 +176,17 @@ private struct DayScheduleRow: View {
                 Spacer()
 
                 if isEnabled {
-                    Text("\(formattedTime(startHour, startMinute)) - \(formattedTime(endHour, endMinute))")
-                        .font(.caption)
-                        .foregroundStyle(Color.seansTextSecondary)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("\(formattedTime(startHour, startMinute)) - \(formattedTime(endHour, endMinute))")
+                            .font(.caption)
+                            .foregroundStyle(Color.seansTextSecondary)
+
+                        if let max = maxSessions {
+                            Text("до \(max) сеансів")
+                                .font(.caption2)
+                                .foregroundStyle(Color.seansPrimary)
+                        }
+                    }
                 } else {
                     Text("Вихідний")
                         .font(.caption)
@@ -151,22 +196,31 @@ private struct DayScheduleRow: View {
         }
     }
 
+    private func makeSchedule(
+        startHour: Int? = nil,
+        startMinute: Int? = nil,
+        endHour: Int? = nil,
+        endMinute: Int? = nil,
+        maxSessions: Int?? = nil  // Double optional: nil = keep current, .some(nil) = remove limit
+    ) -> DaySchedule {
+        DaySchedule(
+            startTime: TimeOfDay(
+                hour: startHour ?? self.startHour,
+                minute: startMinute ?? self.startMinute
+            ),
+            endTime: TimeOfDay(
+                hour: endHour ?? self.endHour,
+                minute: endMinute ?? self.endMinute
+            ),
+            isEnabled: true,
+            maxSessionsPerDay: maxSessions ?? self.maxSessions
+        )
+    }
+
     private func formattedTime(_ hour: Int, _ minute: Int) -> String {
         let hourString = hour.formatted(.number.precision(.integerLength(2)))
         let minuteString = minute.formatted(.number.precision(.integerLength(2)))
         return "\(hourString):\(minuteString)"
-    }
-
-    private func updateSchedule() {
-        if isEnabled {
-            onChange(DaySchedule(
-                startTime: TimeOfDay(hour: startHour, minute: startMinute),
-                endTime: TimeOfDay(hour: endHour, minute: endMinute),
-                isEnabled: true
-            ))
-        } else {
-            onChange(nil)
-        }
     }
 }
 

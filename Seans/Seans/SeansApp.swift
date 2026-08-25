@@ -13,6 +13,7 @@ import SwiftUI
 struct SeansApp: App {
     init() {
         FirebaseApp.configure()
+        PushNotificationService.shared.setup()
     }
 
     var body: some Scene {
@@ -20,6 +21,9 @@ struct SeansApp: App {
             Stage()
                 .onOpenURL { url in
                     GIDSignIn.sharedInstance.handle(url)
+                }
+                .task {
+                    await PushNotificationService.shared.requestPermission()
                 }
         }
     }

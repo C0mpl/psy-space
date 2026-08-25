@@ -14,11 +14,12 @@ final class UserRepository {
     // MARK: - Configuration
 
     /// The therapist's email. Sign-ins matching this email get therapist role.
-    private let therapistEmail = "therapist@example.com" // TODO: Replace with actual email
+    private let therapistEmail = "iliasmirzoiev9@gmail.com" // TODO: Replace with actual email
 
     // MARK: - Dependencies
 
     private let authService = AuthService.shared
+    private let firestore = FirestoreService.shared
     private let storage: UserStorage?
     private var authListener: AuthStateDidChangeListenerHandle?
 
@@ -72,6 +73,11 @@ final class UserRepository {
 
         storage?.saveUser(user)
         currentUser = user
+
+        // Save to Firestore for Cloud Functions access
+        Task {
+            try? await firestore.saveUser(user)
+        }
     }
 
     // MARK: - Sign In
@@ -95,6 +101,9 @@ final class UserRepository {
 
             storage?.saveUser(user)
             currentUser = user
+
+            // Save to Firestore for Cloud Functions access
+            try? await firestore.saveUser(user)
         } catch {
             self.error = .signInFailed
         }
@@ -111,6 +120,23 @@ final class UserRepository {
             self.error = .unknown
         }
     }
+
+    // MARK: - Debug
+
+    #if DEBUG
+    func debugSwitchRole() {
+        guard let user = currentUser else { return }
+        let newUser = User(
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            isTherapist: !user.isTherapist,
+            createdAt: user.createdAt
+        )
+        storage?.saveUser(newUser)
+        currentUser = newUser
+    }
+    #endif
 }
 
 enum UserError: Error {

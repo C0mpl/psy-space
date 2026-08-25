@@ -11,6 +11,9 @@ struct ScheduleTab: View {
     @Environment(AvailabilityRepository.self) private var availabilityRepo
     @Environment(BookingRepository.self) private var bookingRepo
     @State private var showingSettings = false
+    @State private var bookingToCancel: Booking?
+    @State private var cancellationReason = ""
+    @State private var bookingToReschedule: Booking?
 
     var body: some View {
         NavigationStack {
@@ -21,6 +24,8 @@ struct ScheduleTab: View {
 
                 weeklyScheduleSection
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.seansBackground)
             .navigationTitle("Розклад")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -32,6 +37,33 @@ struct ScheduleTab: View {
             .sheet(isPresented: $showingSettings) {
                 AvailabilitySettingsView(repository: availabilityRepo)
             }
+            .sheet(item: $bookingToCancel) { booking in
+                CancelBookingSheet(
+                    booking: booking,
+                    reason: $cancellationReason,
+                    title: "Скасувати сеанс",
+                    message: "Сеанс з \(booking.clientName) на \(booking.dateFormatted) о \(booking.startTime.formatted(date: .omitted, time: .shortened))"
+                ) {
+                    cancelBooking(booking)
+                }
+            }
+            .sheet(item: $bookingToReschedule) { booking in
+                RescheduleSheet(
+                    booking: booking,
+                    rescheduledBy: .therapist
+                ) {
+                    bookingToReschedule = nil
+                }
+            }
+        }
+    }
+
+    // MARK: - Actions
+
+    private func cancelBooking(_ booking: Booking) {
+        Task {
+            await bookingRepo.cancelBooking(booking.bookingId, by: .therapist, reason: cancellationReason)
+            bookingToCancel = nil
         }
     }
 
@@ -68,7 +100,16 @@ struct ScheduleTab: View {
                     .foregroundStyle(Color.seansTextSecondary)
             } else {
                 ForEach(upcoming.prefix(5)) { booking in
-                    BookingRow(booking: booking)
+                    BookingRow(
+                        booking: booking,
+                        onReschedule: {
+                            bookingToReschedule = booking
+                        },
+                        onCancel: {
+                            cancellationReason = ""
+                            bookingToCancel = booking
+                        }
+                    )
                 }
             }
         }
@@ -119,6 +160,8 @@ private struct StatCard: View {
 
 private struct BookingRow: View {
     let booking: Booking
+    let onReschedule: () -> Void
+    let onCancel: () -> Void
 
     var body: some View {
         HStack(spacing: Spacing.md) {
@@ -126,16 +169,32 @@ private struct BookingRow: View {
                 Text(booking.clientName)
                     .font(.headline)
 
-                Text(booking.dateFormatted)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.seansTextSecondary)
+                HStack(spacing: Spacing.xs) {
+                    Text(booking.dateFormatted)
+                    Text("•")
+                    Text(booking.startTime.formatted(date: .omitted, time: .shortened))
+                }
+                .font(.subheadline)
+                .foregroundStyle(Color.seansTextSecondary)
             }
 
             Spacer()
 
-            Text(booking.startTime.formatted(date: .omitted, time: .shortened))
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(Color.seansPrimary)
+            HStack(spacing: Spacing.sm) {
+                Button(action: onReschedule) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.title3)
+                        .foregroundStyle(Color.seansPrimary)
+                }
+                .buttonStyle(.plain)
+
+                Button(role: .destructive, action: onCancel) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(Color.red.opacity(0.7))
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 }

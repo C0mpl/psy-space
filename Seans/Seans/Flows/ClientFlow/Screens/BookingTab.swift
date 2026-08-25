@@ -17,11 +17,18 @@ struct BookingTab: View {
     @State private var showingConfirmation = false
     @State private var showingError = false
     @State private var errorMessage: String?
+    @State private var bookingToCancel: Booking?
+    @State private var cancellationReason = ""
+    @State private var bookingToReschedule: Booking?
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Spacing.lg) {
+                    if !myUpcomingBookings.isEmpty {
+                        myBookingsSection
+                    }
+
                     calendarSection
 
                     if !availableSlots.isEmpty {
@@ -56,6 +63,24 @@ struct BookingTab: View {
             } message: {
                 Text(errorMessage ?? "Не вдалося записатися на сеанс")
             }
+            .sheet(item: $bookingToCancel) { booking in
+                CancelBookingSheet(
+                    booking: booking,
+                    reason: $cancellationReason,
+                    title: "Скасувати запис",
+                    message: "Запис на \(booking.dateFormatted) о \(booking.startTime.formatted(date: .omitted, time: .shortened))"
+                ) {
+                    cancelBooking(booking)
+                }
+            }
+            .sheet(item: $bookingToReschedule) { booking in
+                RescheduleSheet(
+                    booking: booking,
+                    rescheduledBy: .client
+                ) {
+                    bookingToReschedule = nil
+                }
+            }
         }
     }
 
@@ -71,7 +96,35 @@ struct BookingTab: View {
             .filter { !$0.isBooked && $0.startTime > .now }
     }
 
+    private var myUpcomingBookings: [Booking] {
+        guard let userId = userRepo.currentUser?.id else { return [] }
+        return bookingRepo.upcomingBookings(for: userId)
+    }
+
     // MARK: - Sections
+
+    private var myBookingsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Мої записи")
+                .font(.headline)
+                .foregroundStyle(Color.seansTextPrimary)
+
+            VStack(spacing: Spacing.sm) {
+                ForEach(myUpcomingBookings) { booking in
+                    MyBookingCard(
+                        booking: booking,
+                        onReschedule: {
+                            bookingToReschedule = booking
+                        },
+                        onCancel: {
+                            cancellationReason = ""
+                            bookingToCancel = booking
+                        }
+                    )
+                }
+            }
+        }
+    }
 
     private var calendarSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -155,8 +208,18 @@ struct BookingTab: View {
 
     // MARK: - Actions
 
+    private func cancelBooking(_ booking: Booking) {
+        Task {
+            await bookingRepo.cancelBooking(booking.bookingId, by: .client, reason: cancellationReason)
+            bookingToCancel = nil
+        }
+    }
+
     private func bookSlot(_ slot: TimeSlot) {
         guard let user = userRepo.currentUser else { return }
+
+        let weekday = Calendar.current.component(.weekday, from: selectedDate)
+        let maxSessions = availabilityRepo.settings.weeklySchedule.schedule(for: weekday)?.maxSessionsPerDay
 
         Task {
             do {
@@ -164,7 +227,8 @@ struct BookingTab: View {
                     clientId: user.id,
                     clientName: user.name,
                     date: selectedDate,
-                    slot: slot
+                    slot: slot,
+                    maxSessionsPerDay: maxSessions
                 )
                 selectedSlot = nil
             } catch let error as BookingError {
@@ -182,6 +246,49 @@ struct BookingTab: View {
                 showingError = true
             }
         }
+    }
+}
+
+// MARK: - My Booking Card
+
+private struct MyBookingCard: View {
+    let booking: Booking
+    let onReschedule: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(booking.dateFormatted)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.seansTextPrimary)
+
+                Text(booking.timeFormatted)
+                    .font(.caption)
+                    .foregroundStyle(Color.seansTextSecondary)
+            }
+
+            Spacer()
+
+            HStack(spacing: Spacing.sm) {
+                Button(action: onReschedule) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.title3)
+                        .foregroundStyle(Color.seansPrimary)
+                }
+                .buttonStyle(.plain)
+
+                Button(role: .destructive, action: onCancel) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(Color.red.opacity(0.8))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(Spacing.md)
+        .background(Color.seansCardBackground)
+        .clipShape(.rect(cornerRadius: CornerRadius.md))
     }
 }
 

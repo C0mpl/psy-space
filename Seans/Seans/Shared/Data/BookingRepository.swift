@@ -69,17 +69,29 @@ final class BookingRepository {
         clientId: String,
         clientName: String,
         date: Date,
-        slot: TimeSlot
+        slot: TimeSlot,
+        maxSessionsPerDay: Int? = nil
     ) async throws(BookingError) {
-        // Check if slot is already booked
-        let isSlotTaken = bookings.contains { booking in
-            booking.startTime == slot.startTime &&
-            Calendar.current.isDate(booking.date, inSameDayAs: date) &&
-            booking.status != .cancelled
+        let calendar = Calendar.current
+
+        // Get confirmed bookings for this day
+        let dayBookings = bookings.filter { booking in
+            calendar.isDate(booking.date, inSameDayAs: date) && booking.status != .cancelled
+        }
+
+        // Check if slot is already booked (compare timestamps to avoid Date precision issues)
+        let slotTimestamp = slot.startTime.timeIntervalSince1970
+        let isSlotTaken = dayBookings.contains { booking in
+            abs(booking.startTime.timeIntervalSince1970 - slotTimestamp) < 60 // Within 1 minute
         }
 
         if isSlotTaken {
             throw .slotUnavailable
+        }
+
+        // Check daily limit
+        if let maxSessions = maxSessionsPerDay, dayBookings.count >= maxSessions {
+            throw .maxSessionsReached
         }
 
         let booking = Booking(
@@ -90,23 +102,74 @@ final class BookingRepository {
             endTime: slot.endTime
         )
 
+        // Optimistic update - add to local list immediately
+        bookings.append(booking)
+
         do {
             try await firestore.createBooking(booking)
         } catch {
+            // Rollback optimistic update on failure
+            bookings.removeAll { $0.bookingId == booking.bookingId }
             throw .unknown
         }
     }
 
-    func cancelBooking(_ bookingId: String) async {
+    func cancelBooking(_ bookingId: String, by cancelledBy: CancelledBy, reason: String? = nil) async {
         guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else { return }
 
         var booking = bookings[index]
         booking.status = .cancelled
+        booking.cancelledAt = .now
+        booking.cancelledBy = cancelledBy
+        booking.cancellationReason = reason?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? reason : nil
 
         do {
             try await firestore.updateBooking(booking)
         } catch {
             self.error = .unknown
+        }
+    }
+
+    func rescheduleBooking(
+        _ bookingId: String,
+        to newSlot: TimeSlot,
+        newDate: Date,
+        by rescheduledBy: CancelledBy
+    ) async throws(BookingError) {
+        guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else {
+            throw .unknown
+        }
+
+        let calendar = Calendar.current
+
+        // Check if new slot is available (exclude current booking from check)
+        let dayBookings = bookings.filter { booking in
+            calendar.isDate(booking.date, inSameDayAs: newDate) &&
+            booking.status != .cancelled &&
+            booking.id != bookingId
+        }
+
+        let slotTimestamp = newSlot.startTime.timeIntervalSince1970
+        let isSlotTaken = dayBookings.contains { booking in
+            abs(booking.startTime.timeIntervalSince1970 - slotTimestamp) < 60
+        }
+
+        if isSlotTaken {
+            throw .slotUnavailable
+        }
+
+        var booking = bookings[index]
+        booking.previousStartTime = booking.startTime
+        booking.date = newDate
+        booking.startTime = newSlot.startTime
+        booking.endTime = newSlot.endTime
+        booking.rescheduledAt = .now
+        booking.rescheduledBy = rescheduledBy
+
+        do {
+            try await firestore.updateBooking(booking)
+        } catch {
+            throw .unknown
         }
     }
 

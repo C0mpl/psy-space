@@ -12,11 +12,17 @@ struct Booking: Identifiable, Codable, Equatable, Sendable {
     @DocumentID var id: String?
     let clientId: String
     let clientName: String
-    let date: Date
-    let startTime: Date
-    let endTime: Date
+    var date: Date
+    var startTime: Date
+    var endTime: Date
     var status: BookingStatus
     let createdAt: Date
+    var cancelledAt: Date?
+    var cancelledBy: CancelledBy?
+    var cancellationReason: String?
+    var rescheduledAt: Date?
+    var rescheduledBy: CancelledBy?
+    var previousStartTime: Date?
 
     var bookingId: String { id ?? UUID().uuidString }
 
@@ -28,7 +34,13 @@ struct Booking: Identifiable, Codable, Equatable, Sendable {
         startTime: Date,
         endTime: Date,
         status: BookingStatus = .confirmed,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        cancelledAt: Date? = nil,
+        cancelledBy: CancelledBy? = nil,
+        cancellationReason: String? = nil,
+        rescheduledAt: Date? = nil,
+        rescheduledBy: CancelledBy? = nil,
+        previousStartTime: Date? = nil
     ) {
         self.id = id ?? UUID().uuidString
         self.clientId = clientId
@@ -38,6 +50,12 @@ struct Booking: Identifiable, Codable, Equatable, Sendable {
         self.endTime = endTime
         self.status = status
         self.createdAt = createdAt
+        self.cancelledAt = cancelledAt
+        self.cancelledBy = cancelledBy
+        self.cancellationReason = cancellationReason
+        self.rescheduledAt = rescheduledAt
+        self.rescheduledBy = rescheduledBy
+        self.previousStartTime = previousStartTime
     }
 
     var dateFormatted: String {
@@ -54,4 +72,9 @@ enum BookingStatus: String, Codable, Sendable {
     case confirmed
     case cancelled
     case completed
+}
+
+enum CancelledBy: String, Codable, Sendable {
+    case client
+    case therapist
 }

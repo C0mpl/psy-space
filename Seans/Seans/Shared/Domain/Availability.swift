@@ -52,13 +52,23 @@ struct DaySchedule: Codable, Equatable, Sendable {
     var startTime: TimeOfDay
     var endTime: TimeOfDay
     var isEnabled: Bool
+    var maxSessionsPerDay: Int?  // nil = unlimited (use full time window)
 
-    init(startTime: TimeOfDay = .init(hour: 9, minute: 0),
-         endTime: TimeOfDay = .init(hour: 17, minute: 0),
-         isEnabled: Bool = true) {
+    init(
+        startTime: TimeOfDay = .init(hour: 9, minute: 0),
+        endTime: TimeOfDay = .init(hour: 17, minute: 0),
+        isEnabled: Bool = true,
+        maxSessionsPerDay: Int? = nil
+    ) {
         self.startTime = startTime
         self.endTime = endTime
         self.isEnabled = isEnabled
+        self.maxSessionsPerDay = maxSessionsPerDay
+    }
+
+    /// Total available minutes in the time window
+    var totalMinutes: Int {
+        endTime.totalMinutes - startTime.totalMinutes
     }
 }
 
