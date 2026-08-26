@@ -33,10 +33,22 @@ final class BookingRepository {
         listener?.remove()
         self.clientId = clientId
 
+        #if DEBUG
+        print("📡 BookingRepository: Starting listener (clientId: \(clientId ?? "all"))")
+        #endif
+
         if let clientId {
             // Client only sees their own bookings
             listener = firestore.listenToBookings(forClientId: clientId) { [weak self] bookings in
                 Task { @MainActor in
+                    #if DEBUG
+                    print("📡 BookingRepository: Received \(bookings.count) bookings for client")
+                    for booking in bookings {
+                        if booking.rescheduleRequest != nil {
+                            print("   - Booking \(booking.bookingId) has reschedule request: \(booking.rescheduleRequest!.status)")
+                        }
+                    }
+                    #endif
                     self?.bookings = bookings
                 }
             }
@@ -44,6 +56,14 @@ final class BookingRepository {
             // Therapist sees all bookings
             listener = firestore.listenToBookings { [weak self] bookings in
                 Task { @MainActor in
+                    #if DEBUG
+                    print("📡 BookingRepository: Received \(bookings.count) bookings for therapist")
+                    for booking in bookings {
+                        if booking.rescheduleRequest != nil {
+                            print("   - Booking \(booking.bookingId) has reschedule request: \(booking.rescheduleRequest!.status)")
+                        }
+                    }
+                    #endif
                     self?.bookings = bookings
                 }
             }
@@ -70,7 +90,10 @@ final class BookingRepository {
         clientName: String,
         date: Date,
         slot: TimeSlot,
-        maxSessionsPerDay: Int? = nil
+        maxSessionsPerDay: Int? = nil,
+        paymentId: String? = nil,
+        paidAmount: Int? = nil,
+        usedCreditAmount: Int? = nil
     ) async throws(BookingError) {
         let calendar = Calendar.current
 
@@ -99,7 +122,11 @@ final class BookingRepository {
             clientName: clientName,
             date: date,
             startTime: slot.startTime,
-            endTime: slot.endTime
+            endTime: slot.endTime,
+            paymentId: paymentId,
+            paymentStatus: paymentId != nil ? .success : nil,
+            paidAmount: paidAmount,
+            usedCreditAmount: usedCreditAmount
         )
 
         // Optimistic update - add to local list immediately
@@ -114,27 +141,120 @@ final class BookingRepository {
         }
     }
 
-    func cancelBooking(_ bookingId: String, by cancelledBy: CancelledBy, reason: String? = nil) async {
-        guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else { return }
+    // MARK: - Cancellation
+
+    /// Result of a cancellation operation
+    struct CancellationResult {
+        let creditAmount: Int?
+        let refundedAmount: Int?
+        let refundSuccess: Bool
+    }
+
+    /// Cancels a booking with optional refund.
+    /// - Parameters:
+    ///   - bookingId: The booking to cancel
+    ///   - cancelledBy: Who initiated the cancellation
+    ///   - reason: Optional cancellation reason
+    ///   - refund: If true, attempt to refund via Monobank instead of giving credit
+    ///   - paymentRepo: Required if refund is true
+    /// - Returns: CancellationResult with credit/refund info
+    @discardableResult
+    func cancelBooking(
+        _ bookingId: String,
+        by cancelledBy: CancelledBy,
+        reason: String? = nil,
+        refund: Bool = false,
+        paymentRepo: PaymentRepository? = nil
+    ) async -> CancellationResult {
+        guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else {
+            return CancellationResult(creditAmount: nil, refundedAmount: nil, refundSuccess: false)
+        }
 
         var booking = bookings[index]
+        let hasPaidAmount = booking.paidAmount != nil && booking.paidAmount! > 0
+        let qualifiesForCompensation = booking.canCancelWithCredit && hasPaidAmount
+
         booking.status = .cancelled
         booking.cancelledAt = .now
         booking.cancelledBy = cancelledBy
         booking.cancellationReason = reason?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? reason : nil
+
+        var result = CancellationResult(creditAmount: nil, refundedAmount: nil, refundSuccess: false)
+
+        // Handle refund or credit
+        let usedCredit = booking.usedCreditAmount ?? 0
+
+        if refund, let paymentId = booking.paymentId, let amount = booking.paidAmount, amount > 0, let paymentRepo {
+            // Has Monobank payment - attempt refund
+            do {
+                let success = try await paymentRepo.refundPayment(
+                    invoiceId: paymentId,
+                    reference: booking.bookingId,
+                    amount: nil  // Full refund
+                )
+
+                if success {
+                    booking.refundedAt = .now
+                    booking.refundedAmount = amount
+                    booking.paymentStatus = .refunded
+                    booking.creditGivenOnCancel = false
+
+                    // Also restore any credit that was used
+                    if usedCredit > 0 {
+                        try? await firestore.addUserCredit(userId: booking.clientId, amount: usedCredit)
+                    }
+
+                    result = CancellationResult(creditAmount: usedCredit > 0 ? usedCredit : nil, refundedAmount: amount, refundSuccess: true)
+                } else {
+                    // Refund failed, fall back to credit if eligible
+                    if qualifiesForCompensation {
+                        let totalCredit = amount + usedCredit
+                        booking.creditGivenOnCancel = true
+                        try? await firestore.addUserCredit(userId: booking.clientId, amount: totalCredit)
+                        result = CancellationResult(creditAmount: totalCredit, refundedAmount: nil, refundSuccess: false)
+                    }
+                }
+            } catch {
+                // Fall back to credit if eligible
+                if qualifiesForCompensation {
+                    let totalCredit = amount + usedCredit
+                    booking.creditGivenOnCancel = true
+                    try? await firestore.addUserCredit(userId: booking.clientId, amount: totalCredit)
+                    result = CancellationResult(creditAmount: totalCredit, refundedAmount: nil, refundSuccess: false)
+                }
+            }
+        } else if refund, usedCredit > 0 {
+            // Credit-only payment - just restore the credit
+            try? await firestore.addUserCredit(userId: booking.clientId, amount: usedCredit)
+            booking.creditGivenOnCancel = true
+            result = CancellationResult(creditAmount: usedCredit, refundedAmount: nil, refundSuccess: true)
+        } else if qualifiesForCompensation {
+            // No refund requested, give credit for paid amount + restore used credit
+            booking.creditGivenOnCancel = true
+            let totalCredit = (booking.paidAmount ?? 0) + usedCredit
+            if totalCredit > 0 {
+                try? await firestore.addUserCredit(userId: booking.clientId, amount: totalCredit)
+                result = CancellationResult(creditAmount: totalCredit, refundedAmount: nil, refundSuccess: false)
+            }
+        }
 
         do {
             try await firestore.updateBooking(booking)
         } catch {
             self.error = .unknown
         }
+
+        return result
     }
 
-    func rescheduleBooking(
+    // MARK: - Reschedule Request Flow
+
+    /// Creates a reschedule request that needs approval from the other party
+    func requestReschedule(
         _ bookingId: String,
         to newSlot: TimeSlot,
         newDate: Date,
-        by rescheduledBy: CancelledBy
+        by requestedBy: CancelledBy
     ) async throws(BookingError) {
         guard let index = bookings.firstIndex(where: { $0.id == bookingId }) else {
             throw .unknown
@@ -159,17 +279,95 @@ final class BookingRepository {
         }
 
         var booking = bookings[index]
+
+        // Create reschedule request
+        booking.rescheduleRequest = RescheduleRequest(
+            requestedBy: requestedBy,
+            requestedAt: .now,
+            newDate: newDate,
+            newStartTime: newSlot.startTime,
+            newEndTime: newSlot.endTime,
+            status: .pending
+        )
+
+        #if DEBUG
+        print("📝 BookingRepository: Creating reschedule request for booking \(bookingId)")
+        print("   - Requested by: \(requestedBy)")
+        print("   - New date: \(newDate)")
+        #endif
+
+        do {
+            try await firestore.updateBooking(booking)
+            #if DEBUG
+            print("✅ BookingRepository: Reschedule request saved successfully")
+            #endif
+        } catch {
+            #if DEBUG
+            print("❌ BookingRepository: Failed to save reschedule request: \(error)")
+            #endif
+            throw .unknown
+        }
+    }
+
+    /// Approves a pending reschedule request
+    func approveReschedule(_ bookingId: String) async throws(BookingError) {
+        guard let index = bookings.firstIndex(where: { $0.id == bookingId }),
+              let request = bookings[index].rescheduleRequest,
+              request.status == .pending else {
+            throw .unknown
+        }
+
+        var booking = bookings[index]
+
+        // Apply the reschedule
         booking.previousStartTime = booking.startTime
-        booking.date = newDate
-        booking.startTime = newSlot.startTime
-        booking.endTime = newSlot.endTime
+        booking.date = request.newDate
+        booking.startTime = request.newStartTime
+        booking.endTime = request.newEndTime
         booking.rescheduledAt = .now
-        booking.rescheduledBy = rescheduledBy
+        booking.rescheduledBy = request.requestedBy
+
+        // Clear the request (setData without merge will remove the field)
+        booking.rescheduleRequest = nil
 
         do {
             try await firestore.updateBooking(booking)
         } catch {
             throw .unknown
+        }
+    }
+
+    /// Rejects a pending reschedule request
+    func rejectReschedule(_ bookingId: String) async {
+        guard let index = bookings.firstIndex(where: { $0.id == bookingId }),
+              bookings[index].rescheduleRequest?.status == .pending else {
+            return
+        }
+
+        var booking = bookings[index]
+        booking.rescheduleRequest = nil
+
+        do {
+            try await firestore.updateBooking(booking)
+        } catch {
+            self.error = .unknown
+        }
+    }
+
+    /// Cancels a pending reschedule request (by the requester)
+    func cancelRescheduleRequest(_ bookingId: String) async {
+        guard let index = bookings.firstIndex(where: { $0.id == bookingId }),
+              bookings[index].rescheduleRequest?.status == .pending else {
+            return
+        }
+
+        var booking = bookings[index]
+        booking.rescheduleRequest = nil
+
+        do {
+            try await firestore.updateBooking(booking)
+        } catch {
+            self.error = .unknown
         }
     }
 
@@ -208,6 +406,35 @@ final class BookingRepository {
 
     var sessionsThisWeek: Int {
         bookingsThisWeek().count
+    }
+
+    /// Bookings with pending reschedule requests that need response
+    func pendingRescheduleRequests(for userId: String, isTherapist: Bool) -> [Booking] {
+        bookings.filter { booking in
+            guard let request = booking.rescheduleRequest,
+                  request.status == .pending else { return false }
+
+            // Show to the other party (not the requester)
+            if isTherapist {
+                return request.requestedBy == .client
+            } else {
+                return request.requestedBy == .therapist && booking.clientId == userId
+            }
+        }
+    }
+
+    /// Bookings where this user has a pending reschedule request (awaiting response)
+    func myPendingRescheduleRequests(for userId: String, isTherapist: Bool) -> [Booking] {
+        bookings.filter { booking in
+            guard let request = booking.rescheduleRequest,
+                  request.status == .pending else { return false }
+
+            if isTherapist {
+                return request.requestedBy == .therapist
+            } else {
+                return request.requestedBy == .client && booking.clientId == userId
+            }
+        }
     }
 }
 

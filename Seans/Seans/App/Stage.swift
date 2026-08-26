@@ -12,6 +12,7 @@ struct Stage: View {
     @State private var availabilityRepo = AvailabilityRepository()
     @State private var bookingRepo = BookingRepository()
     @State private var notificationRepo = NotificationRepository()
+    @State private var paymentRepo = PaymentRepository()
 
     var body: some View {
         Group {
@@ -28,7 +29,11 @@ struct Stage: View {
         .environment(availabilityRepo)
         .environment(bookingRepo)
         .environment(notificationRepo)
+        .environment(paymentRepo)
         .tint(Color.seansPrimary)
+        .onOpenURL { url in
+            handleOpenURL(url)
+        }
         .onChange(of: userRepo.currentUser) { _, newUser in
             setupListeners(for: newUser)
         }
@@ -58,6 +63,10 @@ struct Stage: View {
     private func setupListeners(for user: User?) {
         guard let user else { return }
 
+        #if DEBUG
+        print("🔄 Stage: Setting up listeners for user \(user.id) (isTherapist: \(user.isTherapist))")
+        #endif
+
         if user.isTherapist {
             // Therapist sees all bookings
             bookingRepo.startListening()
@@ -79,6 +88,13 @@ struct Stage: View {
             currentUserId: user.id,
             isTherapist: user.isTherapist
         )
+    }
+
+    private func handleOpenURL(_ url: URL) {
+        // Handle payment callbacks (seans://payment-callback?reference=...)
+        if url.scheme == "seans" && url.host == "payment-callback" {
+            paymentRepo.handlePaymentCallback(url: url)
+        }
     }
 }
 

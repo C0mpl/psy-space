@@ -10,6 +10,7 @@ import SwiftUI
 struct ScheduleTab: View {
     @Environment(AvailabilityRepository.self) private var availabilityRepo
     @Environment(BookingRepository.self) private var bookingRepo
+    @Environment(PaymentRepository.self) private var paymentRepo
     @State private var showingSettings = false
     @State private var bookingToCancel: Booking?
     @State private var cancellationReason = ""
@@ -42,9 +43,10 @@ struct ScheduleTab: View {
                     booking: booking,
                     reason: $cancellationReason,
                     title: "Скасувати сеанс",
-                    message: "Сеанс з \(booking.clientName) на \(booking.dateFormatted) о \(booking.startTime.formatted(date: .omitted, time: .shortened))"
-                ) {
-                    cancelBooking(booking)
+                    message: "Сеанс з \(booking.clientName) на \(booking.dateFormatted) о \(booking.startTime.formatted(date: .omitted, time: .shortened))",
+                    isTherapist: true
+                ) { refund in
+                    cancelBooking(booking, refund: refund)
                 }
             }
             .sheet(item: $bookingToReschedule) { booking in
@@ -60,9 +62,15 @@ struct ScheduleTab: View {
 
     // MARK: - Actions
 
-    private func cancelBooking(_ booking: Booking) {
+    private func cancelBooking(_ booking: Booking, refund: Bool) {
         Task {
-            await bookingRepo.cancelBooking(booking.bookingId, by: .therapist, reason: cancellationReason)
+            _ = await bookingRepo.cancelBooking(
+                booking.bookingId,
+                by: .therapist,
+                reason: cancellationReason,
+                refund: refund,
+                paymentRepo: paymentRepo
+            )
             bookingToCancel = nil
         }
     }
@@ -150,9 +158,7 @@ private struct StatCard: View {
                 .foregroundStyle(Color.seansTextSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(Spacing.md)
-        .background(Color.seansCardBackground)
-        .clipShape(.rect(cornerRadius: CornerRadius.md))
+        .seansCard(elevation: .low)
     }
 }
 
@@ -163,37 +169,58 @@ private struct BookingRow: View {
     let onReschedule: () -> Void
     let onCancel: () -> Void
 
-    var body: some View {
-        HStack(spacing: Spacing.md) {
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(booking.clientName)
-                    .font(.headline)
+    private var hasPendingReschedule: Bool {
+        booking.rescheduleRequest?.status == .pending
+    }
 
-                HStack(spacing: Spacing.xs) {
-                    Text(booking.dateFormatted)
-                    Text("•")
-                    Text(booking.startTime.formatted(date: .omitted, time: .shortened))
+    private var isCurrentUserRequester: Bool {
+        booking.rescheduleRequest?.requestedBy == .therapist
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.md) {
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text(booking.clientName)
+                        .font(.headline)
+
+                    HStack(spacing: Spacing.xs) {
+                        Text(booking.dateFormatted)
+                        Text("•")
+                        Text(booking.startTime.formatted(date: .omitted, time: .shortened))
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(Color.seansTextSecondary)
                 }
-                .font(.subheadline)
-                .foregroundStyle(Color.seansTextSecondary)
+
+                Spacer()
+
+                if !hasPendingReschedule {
+                    HStack(spacing: Spacing.sm) {
+                        Button(action: onReschedule) {
+                            Image(systemName: "calendar.badge.clock")
+                                .font(.title3)
+                                .foregroundStyle(Color.seansPrimary)
+                        }
+                        .buttonStyle(SeansIconButtonStyle())
+                        .accessibilityLabel("Перенести сеанс")
+
+                        Button(role: .destructive, action: onCancel) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(Color.seansError)
+                        }
+                        .buttonStyle(SeansIconButtonStyle())
+                        .accessibilityLabel("Скасувати сеанс")
+                    }
+                }
             }
 
-            Spacer()
-
-            HStack(spacing: Spacing.sm) {
-                Button(action: onReschedule) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.title3)
-                        .foregroundStyle(Color.seansPrimary)
-                }
-                .buttonStyle(.plain)
-
-                Button(role: .destructive, action: onCancel) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(Color.red.opacity(0.7))
-                }
-                .buttonStyle(.plain)
+            if hasPendingReschedule {
+                RescheduleRequestCard(
+                    booking: booking,
+                    isCurrentUserRequester: isCurrentUserRequester
+                )
             }
         }
     }
@@ -213,7 +240,7 @@ private struct WeekdayRow: View {
             Spacer()
 
             if let schedule, schedule.isEnabled {
-                Text("\(schedule.startTime.formatted) - \(schedule.endTime.formatted)")
+                Text(schedule.formattedSummary)
                     .font(.subheadline)
                     .foregroundStyle(Color.seansTextSecondary)
             } else {
@@ -256,4 +283,5 @@ enum Weekday: Int, CaseIterable, Identifiable {
     ScheduleTab()
         .environment(AvailabilityRepository())
         .environment(BookingRepository())
+        .environment(PaymentRepository())
 }

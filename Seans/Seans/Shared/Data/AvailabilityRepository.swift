@@ -73,6 +73,11 @@ final class AvailabilityRepository {
         saveSettings()
     }
 
+    func updateSessionPrice(_ priceUAH: Int) {
+        settings.sessionPriceUAH = max(1, priceUAH)
+        saveSettings()
+    }
+
     private func saveSettings() {
         Task {
             do {
@@ -99,9 +104,6 @@ final class AvailabilityRepository {
         let breakDuration = settings.breakBetweenSessionsMinutes
         let slotInterval = sessionDuration + breakDuration
 
-        var currentTime = daySchedule.startTime.toDate(on: date, calendar: calendar)
-        let endTime = daySchedule.endTime.toDate(on: date, calendar: calendar)
-
         // Count existing confirmed bookings for this day
         let confirmedBookings = existingBookings.filter { $0.status != .cancelled }
         let bookedCount = confirmedBookings.count
@@ -109,30 +111,39 @@ final class AvailabilityRepository {
         // Check if daily limit is reached
         let dailyLimitReached = daySchedule.maxSessionsPerDay.map { bookedCount >= $0 } ?? false
 
-        while currentTime.addingTimeInterval(TimeInterval(sessionDuration * 60)) <= endTime {
-            let slotEnd = currentTime.addingTimeInterval(TimeInterval(sessionDuration * 60))
+        // Generate slots for each time window
+        for window in daySchedule.timeWindows {
+            guard window.isValid else { continue }
 
-            let currentTimestamp = currentTime.timeIntervalSince1970
-            let isBookedByTime = confirmedBookings.contains { booking in
-                abs(booking.startTime.timeIntervalSince1970 - currentTimestamp) < 60 // Within 1 minute
+            var currentTime = window.startTime.toDate(on: date, calendar: calendar)
+            let windowEnd = window.endTime.toDate(on: date, calendar: calendar)
+
+            while currentTime.addingTimeInterval(TimeInterval(sessionDuration * 60)) <= windowEnd {
+                let slotEnd = currentTime.addingTimeInterval(TimeInterval(sessionDuration * 60))
+
+                let currentTimestamp = currentTime.timeIntervalSince1970
+                let isBookedByTime = confirmedBookings.contains { booking in
+                    abs(booking.startTime.timeIntervalSince1970 - currentTimestamp) < 60 // Within 1 minute
+                }
+
+                // Slot is unavailable if it's booked OR if daily limit is reached
+                let isUnavailable = isBookedByTime || (dailyLimitReached && !isBookedByTime)
+
+                let slot = TimeSlot(
+                    id: "\(date.timeIntervalSince1970)-\(currentTime.timeIntervalSince1970)",
+                    date: date,
+                    startTime: currentTime,
+                    endTime: slotEnd,
+                    isBooked: isUnavailable
+                )
+                slots.append(slot)
+
+                currentTime = currentTime.addingTimeInterval(TimeInterval(slotInterval * 60))
             }
-
-            // Slot is unavailable if it's booked OR if daily limit is reached
-            let isUnavailable = isBookedByTime || (dailyLimitReached && !isBookedByTime)
-
-            let slot = TimeSlot(
-                id: "\(date.timeIntervalSince1970)-\(currentTime.timeIntervalSince1970)",
-                date: date,
-                startTime: currentTime,
-                endTime: slotEnd,
-                isBooked: isUnavailable
-            )
-            slots.append(slot)
-
-            currentTime = currentTime.addingTimeInterval(TimeInterval(slotInterval * 60))
         }
 
-        return slots
+        // Sort slots by start time
+        return slots.sorted { $0.startTime < $1.startTime }
     }
 
     // MARK: - Helpers

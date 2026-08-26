@@ -36,6 +36,20 @@ struct AvailabilitySettingsView: View {
 
     private var generalSection: some View {
         Section("Загальні") {
+            HStack {
+                Text("Ціна сеансу")
+                Spacer()
+                TextField("", value: Binding(
+                    get: { repository.settings.sessionPriceUAH },
+                    set: { repository.updateSessionPrice($0) }
+                ), format: .number)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 80)
+                Text("\u{20B4}")
+                    .foregroundStyle(Color.seansTextSecondary)
+            }
+
             Stepper(
                 "Макс. сеансів на тиждень: \(repository.settings.maxSessionsPerWeek)",
                 value: Binding(
@@ -96,10 +110,7 @@ private struct DayScheduleRow: View {
     @State private var isExpanded = false
 
     private var isEnabled: Bool { schedule?.isEnabled ?? false }
-    private var startHour: Int { schedule?.startTime.hour ?? 9 }
-    private var startMinute: Int { schedule?.startTime.minute ?? 0 }
-    private var endHour: Int { schedule?.endTime.hour ?? 17 }
-    private var endMinute: Int { schedule?.endTime.minute ?? 0 }
+    private var timeWindows: [TimeWindow] { schedule?.timeWindows ?? [] }
     private var maxSessions: Int? { schedule?.maxSessionsPerDay }
     private var hasLimit: Bool { maxSessions != nil }
 
@@ -110,7 +121,7 @@ private struct DayScheduleRow: View {
                     get: { isEnabled },
                     set: { newValue in
                         if newValue {
-                            schedule = makeSchedule()
+                            schedule = DaySchedule()
                         } else {
                             schedule = nil
                         }
@@ -118,42 +129,41 @@ private struct DayScheduleRow: View {
                 ))
 
                 if isEnabled {
-                    HStack {
-                        Text("Початок")
-                        Spacer()
-                        TimePicker(
-                            hour: Binding(
-                                get: { startHour },
-                                set: { schedule = makeSchedule(startHour: $0) }
-                            ),
-                            minute: Binding(
-                                get: { startMinute },
-                                set: { schedule = makeSchedule(startMinute: $0) }
-                            )
+                    // Time windows
+                    ForEach(Array(timeWindows.enumerated()), id: \.element.id) { index, window in
+                        TimeWindowRow(
+                            window: window,
+                            index: index,
+                            canDelete: timeWindows.count > 1,
+                            onUpdate: { updated in
+                                updateWindow(at: index, with: updated)
+                            },
+                            onDelete: {
+                                deleteWindow(at: index)
+                            }
                         )
+
+                        if index < timeWindows.count - 1 {
+                            Divider()
+                        }
                     }
 
-                    HStack {
-                        Text("Кінець")
-                        Spacer()
-                        TimePicker(
-                            hour: Binding(
-                                get: { endHour },
-                                set: { schedule = makeSchedule(endHour: $0) }
-                            ),
-                            minute: Binding(
-                                get: { endMinute },
-                                set: { schedule = makeSchedule(endMinute: $0) }
-                            )
-                        )
+                    // Add window button
+                    Button {
+                        addWindow()
+                    } label: {
+                        Label("Додати вікно", systemImage: "plus.circle")
+                            .font(.subheadline)
                     }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.seansPrimary)
 
                     Divider()
 
                     Toggle("Обмежити кількість сеансів", isOn: Binding(
                         get: { hasLimit },
                         set: { newValue in
-                            schedule = makeSchedule(maxSessions: newValue ? 4 : nil)
+                            updateMaxSessions(newValue ? 4 : nil)
                         }
                     ))
 
@@ -162,7 +172,7 @@ private struct DayScheduleRow: View {
                             "Макс. сеансів: \(maxSessions ?? 4)",
                             value: Binding(
                                 get: { maxSessions ?? 4 },
-                                set: { schedule = makeSchedule(maxSessions: $0) }
+                                set: { updateMaxSessions($0) }
                             ),
                             in: 1...12
                         )
@@ -177,9 +187,11 @@ private struct DayScheduleRow: View {
 
                 if isEnabled {
                     VStack(alignment: .trailing, spacing: 2) {
-                        Text("\(formattedTime(startHour, startMinute)) - \(formattedTime(endHour, endMinute))")
+                        Text(schedule?.formattedSummary ?? "")
                             .font(.caption)
                             .foregroundStyle(Color.seansTextSecondary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.trailing)
 
                         if let max = maxSessions {
                             Text("до \(max) сеансів")
@@ -196,31 +208,135 @@ private struct DayScheduleRow: View {
         }
     }
 
-    private func makeSchedule(
-        startHour: Int? = nil,
-        startMinute: Int? = nil,
-        endHour: Int? = nil,
-        endMinute: Int? = nil,
-        maxSessions: Int?? = nil  // Double optional: nil = keep current, .some(nil) = remove limit
-    ) -> DaySchedule {
-        DaySchedule(
-            startTime: TimeOfDay(
-                hour: startHour ?? self.startHour,
-                minute: startMinute ?? self.startMinute
-            ),
-            endTime: TimeOfDay(
-                hour: endHour ?? self.endHour,
-                minute: endMinute ?? self.endMinute
-            ),
-            isEnabled: true,
-            maxSessionsPerDay: maxSessions ?? self.maxSessions
-        )
+    // MARK: - Actions
+
+    private func updateWindow(at index: Int, with window: TimeWindow) {
+        guard var current = schedule else { return }
+        guard index < current.timeWindows.count else { return }
+        current.timeWindows[index] = window
+        schedule = current
     }
 
-    private func formattedTime(_ hour: Int, _ minute: Int) -> String {
-        let hourString = hour.formatted(.number.precision(.integerLength(2)))
-        let minuteString = minute.formatted(.number.precision(.integerLength(2)))
-        return "\(hourString):\(minuteString)"
+    private func deleteWindow(at index: Int) {
+        guard var current = schedule else { return }
+        guard current.timeWindows.count > 1 else { return }
+        current.timeWindows.remove(at: index)
+        schedule = current
+    }
+
+    private func addWindow() {
+        guard var current = schedule else { return }
+
+        // Calculate a reasonable default for new window
+        let lastWindow = current.timeWindows.last
+        let newStartHour = (lastWindow?.endTime.hour ?? 12) + 1
+        let newEndHour = min(newStartHour + 4, 22)
+
+        let newWindow = TimeWindow(
+            startTime: TimeOfDay(hour: newStartHour, minute: 0),
+            endTime: TimeOfDay(hour: newEndHour, minute: 0)
+        )
+        current.timeWindows.append(newWindow)
+        schedule = current
+    }
+
+    private func updateMaxSessions(_ value: Int?) {
+        guard var current = schedule else { return }
+        current.maxSessionsPerDay = value
+        schedule = current
+    }
+}
+
+// MARK: - Time Window Row
+
+private struct TimeWindowRow: View {
+    let window: TimeWindow
+    let index: Int
+    let canDelete: Bool
+    let onUpdate: (TimeWindow) -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        VStack(spacing: Spacing.sm) {
+            HStack {
+                if index == 0 {
+                    Text("Робочий час")
+                        .font(.subheadline.weight(.medium))
+                } else {
+                    Text("Вікно \(index + 1)")
+                        .font(.subheadline.weight(.medium))
+                }
+
+                Spacer()
+
+                if canDelete {
+                    Button(role: .destructive) {
+                        onDelete()
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.subheadline)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.seansError)
+                }
+            }
+
+            HStack {
+                Text("Початок")
+                Spacer()
+                TimePicker(
+                    hour: Binding(
+                        get: { window.startTime.hour },
+                        set: { hour in
+                            var updated = window
+                            updated.startTime.hour = hour
+                            onUpdate(updated)
+                        }
+                    ),
+                    minute: Binding(
+                        get: { window.startTime.minute },
+                        set: { minute in
+                            var updated = window
+                            updated.startTime.minute = minute
+                            onUpdate(updated)
+                        }
+                    )
+                )
+            }
+
+            HStack {
+                Text("Кінець")
+                Spacer()
+                TimePicker(
+                    hour: Binding(
+                        get: { window.endTime.hour },
+                        set: { hour in
+                            var updated = window
+                            updated.endTime.hour = hour
+                            onUpdate(updated)
+                        }
+                    ),
+                    minute: Binding(
+                        get: { window.endTime.minute },
+                        set: { minute in
+                            var updated = window
+                            updated.endTime.minute = minute
+                            onUpdate(updated)
+                        }
+                    )
+                )
+            }
+
+            if !window.isValid {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                    Text("Час закінчення має бути пізніше початку")
+                }
+                .font(.caption)
+                .foregroundStyle(Color.seansError)
+            }
+        }
+        .padding(.vertical, Spacing.xs)
     }
 }
 

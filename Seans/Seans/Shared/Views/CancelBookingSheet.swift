@@ -14,7 +14,42 @@ struct CancelBookingSheet: View {
     @Binding var reason: String
     let title: String
     let message: String
-    let onConfirm: () -> Void
+    let isTherapist: Bool
+    let onConfirm: (_ refund: Bool) -> Void
+
+    @State private var shouldRefund = true  // Default to refund for therapist
+
+    private var monobankPaidAmount: Int {
+        booking.paidAmount ?? 0
+    }
+
+    private var usedCreditAmount: Int {
+        booking.usedCreditAmount ?? 0
+    }
+
+    private var hasAnyPayment: Bool {
+        monobankPaidAmount > 0 || usedCreditAmount > 0
+    }
+
+    private var willGetCredit: Bool {
+        booking.canCancelWithCredit && hasAnyPayment
+    }
+
+    private var hoursRemaining: Int {
+        max(0, Int(booking.hoursUntilSession))
+    }
+
+    private var paidAmountUAH: Int {
+        monobankPaidAmount / 100
+    }
+
+    private var usedCreditUAH: Int {
+        usedCreditAmount / 100
+    }
+
+    private var totalAmountUAH: Int {
+        paidAmountUAH + usedCreditUAH
+    }
 
     var body: some View {
         NavigationStack {
@@ -23,7 +58,7 @@ struct CancelBookingSheet: View {
                     VStack(spacing: Spacing.sm) {
                         Image(systemName: "calendar.badge.minus")
                             .font(.system(size: 48))
-                            .foregroundStyle(Color.red.opacity(0.8))
+                            .foregroundStyle(Color.seansError)
 
                         Text(title)
                             .font(.title2.weight(.semibold))
@@ -35,6 +70,15 @@ struct CancelBookingSheet: View {
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, Spacing.md)
+
+                    // Refund/Credit policy info
+                    if hasAnyPayment {
+                        if isTherapist {
+                            therapistRefundCard
+                        } else {
+                            clientCreditPolicyCard
+                        }
+                    }
 
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text("Причина (необов'язково)")
@@ -50,26 +94,20 @@ struct CancelBookingSheet: View {
                     }
 
                     VStack(spacing: Spacing.sm) {
-                        Button(role: .destructive) {
-                            onConfirm()
+                        Button {
+                            HapticService.notification(.warning)
+                            onConfirm(isTherapist && shouldRefund)
                         } label: {
                             Text("Скасувати запис")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, Spacing.md)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
+                        .buttonStyle(SeansDestructiveButtonStyle())
 
                         Button {
                             dismiss()
                         } label: {
                             Text("Назад")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, Spacing.md)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(SeansSecondaryButtonStyle())
                     }
                 }
                 .padding(.horizontal, Spacing.md)
@@ -81,19 +119,164 @@ struct CancelBookingSheet: View {
             .presentationDragIndicator(.visible)
         }
     }
+
+    // MARK: - Therapist Refund Card
+
+    @ViewBuilder
+    private var therapistRefundCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Header with total
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "creditcard.fill")
+                    .foregroundStyle(Color.seansPrimary)
+
+                Text("Повернення оплати")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.seansTextPrimary)
+
+                Spacer()
+
+                Text("\(totalAmountUAH) ₴")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.seansTextPrimary)
+            }
+
+            // Payment breakdown
+            if monobankPaidAmount > 0 && usedCreditAmount > 0 {
+                // Mixed payment
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    HStack {
+                        Text("Картка:")
+                            .foregroundStyle(Color.seansTextSecondary)
+                        Spacer()
+                        Text("\(paidAmountUAH) ₴")
+                    }
+                    HStack {
+                        Text("Кредит:")
+                            .foregroundStyle(Color.seansTextSecondary)
+                        Spacer()
+                        Text("\(usedCreditUAH) ₴")
+                    }
+                }
+                .font(.caption)
+            }
+
+            // Refund toggle (only if there's Monobank payment)
+            if monobankPaidAmount > 0 {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Toggle(isOn: $shouldRefund) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Повернути на картку")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.seansTextPrimary)
+
+                            if usedCreditAmount > 0 {
+                                Text("Картка: \(paidAmountUAH) ₴ + кредит: \(usedCreditUAH) ₴")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.seansTextSecondary)
+                            } else {
+                                Text("Кошти повернуться на картку клієнта")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.seansTextSecondary)
+                            }
+                        }
+                    }
+                    .tint(Color.seansPrimary)
+
+                    if !shouldRefund {
+                        HStack(spacing: Spacing.xs) {
+                            Image(systemName: "info.circle.fill")
+                                .font(.caption)
+                            Text("Все збережеться як кредит клієнта")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(Color.seansTextSecondary)
+                    }
+                }
+            } else {
+                // Credit-only payment - no toggle, just info
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.seansSuccess)
+                    Text("Кредит \(usedCreditUAH) ₴ буде відновлено")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.seansTextPrimary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(Color.seansPrimary.opacity(0.1))
+        .clipShape(.rect(cornerRadius: CornerRadius.md))
+    }
+
+    // MARK: - Client Credit Policy Card
+
+    @ViewBuilder
+    private var clientCreditPolicyCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: willGetCredit ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(willGetCredit ? Color.seansSuccess : Color.seansWarning)
+
+                Text(willGetCredit ? "Кредит буде збережено" : "Кредит не буде збережено")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.seansTextPrimary)
+
+                Spacer()
+
+                Text("\(totalAmountUAH) ₴")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.seansTextPrimary)
+            }
+
+            if willGetCredit {
+                Text("До сеансу залишилось більше 24 годин (\(hoursRemaining) год.). Оплата буде збережена як кредит для наступного бронювання.")
+                    .font(.caption)
+                    .foregroundStyle(Color.seansTextSecondary)
+            } else {
+                Text("До сеансу залишилось менше 24 годин (\(hoursRemaining) год.). Відповідно до політики скасування, оплата не повертається.")
+                    .font(.caption)
+                    .foregroundStyle(Color.seansTextSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(willGetCredit ? Color.seansSuccess.opacity(0.1) : Color.seansWarning.opacity(0.1))
+        .clipShape(.rect(cornerRadius: CornerRadius.md))
+    }
 }
 
-#Preview {
+#Preview("Client - Credit") {
     CancelBookingSheet(
         booking: Booking(
             clientId: "1",
             clientName: "Тест",
-            date: .now,
-            startTime: .now,
-            endTime: .now
+            date: .now.addingTimeInterval(86400 * 2),
+            startTime: .now.addingTimeInterval(86400 * 2),
+            endTime: .now.addingTimeInterval(86400 * 2 + 3600),
+            paidAmount: 150000
+        ),
+        reason: .constant(""),
+        title: "Скасувати запис",
+        message: "Сеанс з Тест на 24 серп. о 10:00",
+        isTherapist: false
+    ) { _ in }
+}
+
+#Preview("Therapist - Refund") {
+    CancelBookingSheet(
+        booking: Booking(
+            clientId: "1",
+            clientName: "Тест",
+            date: .now.addingTimeInterval(86400 * 2),
+            startTime: .now.addingTimeInterval(86400 * 2),
+            endTime: .now.addingTimeInterval(86400 * 2 + 3600),
+            paidAmount: 150000
         ),
         reason: .constant(""),
         title: "Скасувати сеанс",
-        message: "Сеанс з Тест на 24 серп. о 10:00"
-    ) {}
+        message: "Сеанс з Тест на 24 серп. о 10:00",
+        isTherapist: true
+    ) { _ in }
 }

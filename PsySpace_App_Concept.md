@@ -19,7 +19,7 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 | :--- | :--- | :--- |
 | **Smart Booking & Scheduling** | View therapist's availability (set in-app); book sessions with real-time slot availability. | ✅ Implemented |
 | **Google Sign-In** | Secure authentication via Google account. | ✅ Implemented |
-| **Monobank Payment Integration** | Integrated payment flow using Monobank API (invoices, Apple Pay/Google Pay via MonoPay, webhooks). | 🔲 Pending |
+| **Monobank Payment Integration** | Integrated payment flow using Monobank API (invoices, Apple Pay/Google Pay via MonoPay, webhooks). | ✅ Implemented |
 | **Calendar Sync** | Optional sync of booked sessions to Apple Calendar (EventKit) or Google Calendar. | 🔲 Pending |
 | **Therapeutic Journal & Notes** | Private rich-text diary for thoughts, breakthroughs, and session prep notes. | 🔲 Pending |
 | **Mood & Emotion Tracker** | Daily emotional state check-in using a structured scale (e.g., Plutchik's Wheel of Emotions). | 🔲 Pending |
@@ -36,7 +36,7 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 | **Calendar Sync** | Push booked sessions to Apple Calendar (EventKit) or Google Calendar. | 🔲 Pending |
 | **Client Management** | View client profiles, session history, and shared notes. | 🔲 Pending |
 | **Session Notes & Anamnesis** | Record session notes, hypotheses, and treatment observations per client. | 🔲 Pending |
-| **Cancellation Policies** | Configurable cancellation windows (e.g., free up to 24h; partial/full retention after). | 🔲 Pending |
+| **Cancellation Policies** | Configurable cancellation windows (e.g., free up to 24h; partial/full retention after). | ✅ Implemented |
 | **Homework & Materials** | Assign exercises (CBT worksheets, reading materials) to clients. | 🔲 Pending |
 
 ---
@@ -269,12 +269,15 @@ Mental health data requires careful handling:
 - [x] Firestore sync between therapist and clients
 - [x] Therapist dashboard with stats
 
-### 🔲 Phase 3: Monobank Payments (Pending)
-- [ ] Monobank API integration
-- [ ] Invoice generation flow
-- [ ] Payment webhook handler
-- [ ] Booking confirmation after successful payment
-- [ ] Cancellation and refund handling
+### ✅ Phase 3: Monobank Payments (Complete)
+- [x] Monobank API integration (MonobankService.swift)
+- [x] Invoice generation flow (PaymentRepository, PaymentSheet)
+- [x] Payment webhook handler (Cloud Function deployed)
+- [x] Booking confirmation after successful payment
+- [x] Cancellation and refund handling
+- [x] Credit system for cancelled bookings (24h policy)
+- [x] Test mode for development
+- [x] Automated cleanup of old bookings (Cloud Function)
 
 ### 🔲 Phase 4: Calendar Sync (Pending)
 - [ ] EventKit integration (Apple Calendar)

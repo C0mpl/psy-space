@@ -82,3 +82,264 @@ enum SeansAnimation {
     static let standard: Animation = .easeInOut(duration: 0.3)
     static let gentle: Animation = .easeInOut(duration: 0.5)
 }
+
+// MARK: - Semantic Colors
+
+extension Color {
+    /// Success - soft green for positive feedback
+    static let seansSuccess = Color(light: .init(red: 0.30, green: 0.65, blue: 0.45),
+                                     dark: .init(red: 0.40, green: 0.75, blue: 0.55))
+
+    /// Warning - warm amber for caution
+    static let seansWarning = Color(light: .init(red: 0.85, green: 0.60, blue: 0.25),
+                                     dark: .init(red: 0.90, green: 0.70, blue: 0.35))
+
+    /// Error - soft red for negative feedback
+    static let seansError = Color(light: .init(red: 0.80, green: 0.35, blue: 0.35),
+                                   dark: .init(red: 0.90, green: 0.45, blue: 0.45))
+}
+
+// MARK: - Elevation System
+
+enum Elevation {
+    case none
+    case low      // cards
+    case medium   // buttons
+    case high     // modals
+}
+
+extension View {
+    @ViewBuilder
+    func elevation(_ level: Elevation) -> some View {
+        switch level {
+        case .none:
+            self
+        case .low:
+            self.shadow(color: Color.seansTextPrimary.opacity(0.04), radius: 4, y: 2)
+        case .medium:
+            self.shadow(color: Color.seansTextPrimary.opacity(0.08), radius: 8, y: 4)
+        case .high:
+            self.shadow(color: Color.seansTextPrimary.opacity(0.12), radius: 16, y: 8)
+        }
+    }
+}
+
+// MARK: - Card Modifier
+
+struct SeansCardModifier: ViewModifier {
+    var elevation: Elevation = .low
+    var isInteractive: Bool = false
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isPressed = false
+
+    func body(content: Content) -> some View {
+        content
+            .padding(Spacing.md)
+            .background(Color.seansCardBackground)
+            .clipShape(.rect(cornerRadius: CornerRadius.md))
+            .elevation(elevation)
+            .scaleEffect(isInteractive && isPressed && !reduceMotion ? 0.98 : 1.0)
+            .animation(reduceMotion ? nil : SeansAnimation.quick, value: isPressed)
+            .simultaneousGesture(
+                isInteractive ?
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in isPressed = true }
+                    .onEnded { _ in isPressed = false }
+                : nil
+            )
+    }
+}
+
+extension View {
+    func seansCard(elevation: Elevation = .low, interactive: Bool = false) -> some View {
+        modifier(SeansCardModifier(elevation: elevation, isInteractive: interactive))
+    }
+}
+
+// MARK: - Button Styles
+
+struct SeansPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var isLoading: Bool = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: Spacing.sm) {
+            if isLoading {
+                ProgressView()
+                    .tint(.white)
+            }
+            configuration.label
+        }
+        .font(.headline)
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity)
+        .frame(height: 54)
+        .background(
+            LinearGradient(
+                colors: [Color.seansPrimary, Color.seansAccent],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(.rect(cornerRadius: CornerRadius.md))
+        .elevation(.medium)
+        .opacity(isEnabled && !isLoading ? 1 : 0.6)
+        .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1.0)
+        .animation(reduceMotion ? nil : SeansAnimation.quick, value: configuration.isPressed)
+        .onChange(of: configuration.isPressed) { wasPressed, isPressed in
+            if wasPressed && !isPressed && !reduceMotion {
+                HapticService.impact(.light)
+            }
+        }
+    }
+}
+
+struct SeansSecondaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var isLoading: Bool = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: Spacing.sm) {
+            if isLoading {
+                ProgressView()
+                    .tint(Color.seansTextPrimary)
+            }
+            configuration.label
+        }
+        .font(.headline)
+        .foregroundStyle(Color.seansTextPrimary)
+        .frame(maxWidth: .infinity)
+        .frame(height: 54)
+        .background(Color.seansCardBackground)
+        .clipShape(.rect(cornerRadius: CornerRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.md)
+                .stroke(Color.seansTextSecondary.opacity(0.2), lineWidth: 1)
+        )
+        .elevation(.low)
+        .opacity(isEnabled && !isLoading ? 1 : 0.6)
+        .scaleEffect(configuration.isPressed && !reduceMotion ? 0.99 : 1.0)
+        .opacity(configuration.isPressed ? 0.85 : 1.0)
+        .animation(reduceMotion ? nil : SeansAnimation.quick, value: configuration.isPressed)
+        .onChange(of: configuration.isPressed) { wasPressed, isPressed in
+            if wasPressed && !isPressed && !reduceMotion {
+                HapticService.impact(.light)
+            }
+        }
+    }
+}
+
+struct SeansIconButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(Spacing.xs)
+            .background(
+                Circle()
+                    .fill(Color.seansTextPrimary.opacity(configuration.isPressed ? 0.08 : 0))
+            )
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.95 : 1.0)
+            .animation(reduceMotion ? nil : SeansAnimation.quick, value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { wasPressed, isPressed in
+                if wasPressed && !isPressed && !reduceMotion {
+                    HapticService.impact(.light)
+                }
+            }
+    }
+}
+
+struct SeansDestructiveButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var isLoading: Bool = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: Spacing.sm) {
+            if isLoading {
+                ProgressView()
+                    .tint(.white)
+            }
+            configuration.label
+        }
+        .font(.headline)
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity)
+        .frame(height: 54)
+        .background(Color.seansError)
+        .clipShape(.rect(cornerRadius: CornerRadius.md))
+        .elevation(.medium)
+        .opacity(isEnabled && !isLoading ? 1 : 0.6)
+        .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1.0)
+        .animation(reduceMotion ? nil : SeansAnimation.quick, value: configuration.isPressed)
+        .onChange(of: configuration.isPressed) { wasPressed, isPressed in
+            if wasPressed && !isPressed && !reduceMotion {
+                HapticService.impact(.light)
+            }
+        }
+    }
+}
+
+// MARK: - Loading Overlay
+
+struct SeansLoadingOverlay: View {
+    var message: String?
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
+
+            VStack(spacing: Spacing.md) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                    .tint(Color.seansPrimary)
+
+                if let message {
+                    Text(message)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.seansTextPrimary)
+                }
+            }
+            .padding(Spacing.lg)
+            .background(Color.seansCardBackground)
+            .clipShape(.rect(cornerRadius: CornerRadius.lg))
+            .elevation(.high)
+        }
+    }
+}
+
+// MARK: - Slot Selection Style
+
+struct SeansSlotButtonStyle: ButtonStyle {
+    var isSelected: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(isSelected ? .white : Color.seansTextPrimary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Spacing.sm)
+            .background(isSelected ? Color.seansPrimary : Color.seansCardBackground)
+            .clipShape(.rect(cornerRadius: CornerRadius.sm))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.sm)
+                    .stroke(Color.seansPrimary.opacity(isSelected ? 0 : 0.3), lineWidth: 1)
+            )
+            .elevation(isSelected ? .low : .none)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
+            .animation(reduceMotion ? nil : SeansAnimation.quick, value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { wasPressed, isPressed in
+                if wasPressed && !isPressed && !reduceMotion {
+                    HapticService.selection()
+                }
+            }
+    }
+}

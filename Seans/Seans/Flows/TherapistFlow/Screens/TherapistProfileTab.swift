@@ -9,6 +9,9 @@ import SwiftUI
 
 struct TherapistProfileTab: View {
     @Environment(UserRepository.self) private var userRepo
+    @Environment(AvailabilityRepository.self) private var availabilityRepo
+
+    @State private var showingPaymentSettings = false
 
     var body: some View {
         NavigationStack {
@@ -19,15 +22,16 @@ struct TherapistProfileTab: View {
 
                 Section {
                     NavigationLink {
-                        Text("Налаштування доступності")
+                        AvailabilitySettingsView(repository: availabilityRepo)
                     } label: {
                         Label("Доступність", systemImage: "clock")
                     }
 
-                    NavigationLink {
-                        Text("Налаштування оплати")
+                    Button {
+                        showingPaymentSettings = true
                     } label: {
                         Label("Оплата", systemImage: "creditcard")
+                            .foregroundStyle(Color.seansTextPrimary)
                     }
 
                     NavigationLink {
@@ -52,6 +56,9 @@ struct TherapistProfileTab: View {
             .scrollContentBackground(.hidden)
             .background(Color.seansBackground)
             .navigationTitle("Профіль")
+            .sheet(isPresented: $showingPaymentSettings) {
+                PaymentSettingsView()
+            }
         }
     }
 
@@ -109,4 +116,5 @@ struct TherapistProfileTab: View {
 #Preview {
     TherapistProfileTab()
         .environment(UserRepository())
+        .environment(AvailabilityRepository())
 }

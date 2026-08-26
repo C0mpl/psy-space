@@ -11,15 +11,18 @@ struct BookingTab: View {
     @Environment(UserRepository.self) private var userRepo
     @Environment(AvailabilityRepository.self) private var availabilityRepo
     @Environment(BookingRepository.self) private var bookingRepo
+    @Environment(PaymentRepository.self) private var paymentRepo
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var selectedDate: Date = .now
     @State private var selectedSlot: TimeSlot?
-    @State private var showingConfirmation = false
+    @State private var showingPaymentSheet = false
     @State private var showingError = false
     @State private var errorMessage: String?
     @State private var bookingToCancel: Booking?
     @State private var cancellationReason = ""
     @State private var bookingToReschedule: Booking?
+    @State private var isBooking = false
 
     var body: some View {
         NavigationStack {
@@ -44,19 +47,26 @@ struct BookingTab: View {
             }
             .background(Color.seansBackground)
             .navigationTitle("Запис")
-            .confirmationDialog(
-                "Підтвердити запис",
-                isPresented: $showingConfirmation,
-                presenting: selectedSlot
-            ) { slot in
-                Button("Записатись на \(slot.startTimeFormatted)") {
-                    bookSlot(slot)
+            .sheet(isPresented: $showingPaymentSheet) {
+                if let slot = selectedSlot, let user = userRepo.currentUser {
+                    PaymentSheet(
+                        slot: slot,
+                        date: selectedDate,
+                        priceUAH: availabilityRepo.settings.sessionPriceUAH,
+                        clientId: user.id,
+                        clientName: user.name,
+                        userCredit: user.paymentCredit,
+                        onComplete: { payment, usedCredit in
+                            showingPaymentSheet = false
+                            createBookingAfterPayment(slot: slot, payment: payment, usedCreditAmount: usedCredit)
+                        },
+                        onCancel: {
+                            showingPaymentSheet = false
+                            selectedSlot = nil
+                        }
+                    )
+                    .interactiveDismissDisabled()
                 }
-                Button("Скасувати", role: .cancel) {
-                    selectedSlot = nil
-                }
-            } message: { slot in
-                Text("Записатись на сеанс \(selectedDate.formatted(date: .long, time: .omitted)) о \(slot.startTimeFormatted)?")
             }
             .alert("Помилка", isPresented: $showingError) {
                 Button("OK", role: .cancel) {}
@@ -68,8 +78,9 @@ struct BookingTab: View {
                     booking: booking,
                     reason: $cancellationReason,
                     title: "Скасувати запис",
-                    message: "Запис на \(booking.dateFormatted) о \(booking.startTime.formatted(date: .omitted, time: .shortened))"
-                ) {
+                    message: "Запис на \(booking.dateFormatted) о \(booking.startTime.formatted(date: .omitted, time: .shortened))",
+                    isTherapist: false
+                ) { _ in
                     cancelBooking(booking)
                 }
             }
@@ -143,6 +154,13 @@ struct BookingTab: View {
             .padding(Spacing.sm)
             .background(Color.seansCardBackground)
             .clipShape(.rect(cornerRadius: CornerRadius.lg))
+            .elevation(.low)
+            .onChange(of: selectedDate) { _, _ in
+                selectedSlot = nil
+                if !reduceMotion {
+                    HapticService.selection()
+                }
+            }
         }
     }
 
@@ -158,13 +176,15 @@ struct BookingTab: View {
                 GridItem(.flexible())
             ], spacing: Spacing.sm) {
                 ForEach(availableSlots) { slot in
-                    TimeSlotButton(
-                        slot: slot,
-                        isSelected: selectedSlot?.id == slot.id
-                    ) {
-                        selectedSlot = slot
-                        showingConfirmation = true
+                    Button {
+                        withAnimation(reduceMotion ? nil : SeansAnimation.quick) {
+                            selectedSlot = slot
+                        }
+                        showingPaymentSheet = true
+                    } label: {
+                        Text(slot.startTimeFormatted)
                     }
+                    .buttonStyle(SeansSlotButtonStyle(isSelected: selectedSlot?.id == slot.id))
                 }
             }
         }
@@ -215,23 +235,38 @@ struct BookingTab: View {
         }
     }
 
-    private func bookSlot(_ slot: TimeSlot) {
+    private func createBookingAfterPayment(slot: TimeSlot, payment: Payment, usedCreditAmount: Int?) {
         guard let user = userRepo.currentUser else { return }
 
         let weekday = Calendar.current.component(.weekday, from: selectedDate)
         let maxSessions = availabilityRepo.settings.weeklySchedule.schedule(for: weekday)?.maxSessionsPerDay
 
+        isBooking = true
+
         Task {
             do {
+                // Deduct credit if used
+                if let usedCredit = usedCreditAmount, usedCredit > 0 {
+                    try await FirestoreService.shared.useUserCredit(userId: user.id, amount: usedCredit)
+                    // Refresh user to get updated credit balance
+                    await userRepo.refreshCurrentUser()
+                }
+
                 try await bookingRepo.createBooking(
                     clientId: user.id,
                     clientName: user.name,
                     date: selectedDate,
                     slot: slot,
-                    maxSessionsPerDay: maxSessions
+                    maxSessionsPerDay: maxSessions,
+                    paymentId: payment.invoiceId,
+                    paidAmount: payment.amount > 0 ? payment.amount : nil,
+                    usedCreditAmount: usedCreditAmount
                 )
+                HapticService.notification(.success)
                 selectedSlot = nil
+                paymentRepo.reset()
             } catch let error as BookingError {
+                HapticService.notification(.error)
                 switch error {
                 case .slotUnavailable:
                     errorMessage = "Цей час вже зайнятий. Оберіть інший."
@@ -242,9 +277,11 @@ struct BookingTab: View {
                 }
                 showingError = true
             } catch {
+                HapticService.notification(.error)
                 errorMessage = "Не вдалося записатися на сеанс."
                 showingError = true
             }
+            isBooking = false
         }
     }
 }
@@ -252,68 +289,64 @@ struct BookingTab: View {
 // MARK: - My Booking Card
 
 private struct MyBookingCard: View {
+    @Environment(UserRepository.self) private var userRepo
+
     let booking: Booking
     let onReschedule: () -> Void
     let onCancel: () -> Void
 
-    var body: some View {
-        HStack(spacing: Spacing.md) {
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(booking.dateFormatted)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.seansTextPrimary)
-
-                Text(booking.timeFormatted)
-                    .font(.caption)
-                    .foregroundStyle(Color.seansTextSecondary)
-            }
-
-            Spacer()
-
-            HStack(spacing: Spacing.sm) {
-                Button(action: onReschedule) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.title3)
-                        .foregroundStyle(Color.seansPrimary)
-                }
-                .buttonStyle(.plain)
-
-                Button(role: .destructive, action: onCancel) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(Color.red.opacity(0.8))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(Spacing.md)
-        .background(Color.seansCardBackground)
-        .clipShape(.rect(cornerRadius: CornerRadius.md))
+    private var hasPendingReschedule: Bool {
+        booking.rescheduleRequest?.status == .pending
     }
-}
 
-// MARK: - Time Slot Button
-
-private struct TimeSlotButton: View {
-    let slot: TimeSlot
-    let isSelected: Bool
-    let action: () -> Void
+    private var isCurrentUserRequester: Bool {
+        booking.rescheduleRequest?.requestedBy == .client
+    }
 
     var body: some View {
-        Button(action: action) {
-            Text(slot.startTimeFormatted)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(isSelected ? .white : Color.seansTextPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.sm)
-                .background(isSelected ? Color.seansPrimary : Color.seansCardBackground)
-                .clipShape(.rect(cornerRadius: CornerRadius.sm))
-                .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.sm)
-                        .stroke(Color.seansPrimary.opacity(0.3), lineWidth: 1)
+        VStack(spacing: Spacing.sm) {
+            HStack(spacing: Spacing.md) {
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text(booking.dateFormatted)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.seansTextPrimary)
+
+                    Text(booking.timeFormatted)
+                        .font(.caption)
+                        .foregroundStyle(Color.seansTextSecondary)
+                }
+
+                Spacer()
+
+                if !hasPendingReschedule {
+                    HStack(spacing: Spacing.sm) {
+                        Button(action: onReschedule) {
+                            Image(systemName: "calendar.badge.clock")
+                                .font(.title3)
+                                .foregroundStyle(Color.seansPrimary)
+                        }
+                        .buttonStyle(SeansIconButtonStyle())
+                        .accessibilityLabel("Перенести сеанс")
+
+                        Button(role: .destructive, action: onCancel) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(Color.seansError)
+                        }
+                        .buttonStyle(SeansIconButtonStyle())
+                        .accessibilityLabel("Скасувати сеанс")
+                    }
+                }
+            }
+
+            if hasPendingReschedule {
+                RescheduleRequestCard(
+                    booking: booking,
+                    isCurrentUserRequester: isCurrentUserRequester
                 )
+            }
         }
-        .buttonStyle(.plain)
+        .seansCard(elevation: .low)
     }
 }
 
@@ -322,4 +355,5 @@ private struct TimeSlotButton: View {
         .environment(UserRepository())
         .environment(AvailabilityRepository())
         .environment(BookingRepository())
+        .environment(PaymentRepository())
 }

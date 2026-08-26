@@ -138,22 +138,11 @@ struct SignInScreen: View {
                     .frame(width: 20, height: 20)
 
                 Text("Увійти з Google")
-                    .font(.headline)
             }
-            .foregroundStyle(Color.seansTextPrimary)
-            .frame(maxWidth: .infinity)
-            .frame(height: 54)
             .frame(maxWidth: 400)
-            .background(Color.seansCardBackground)
-            .clipShape(.rect(cornerRadius: CornerRadius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.md)
-                    .stroke(Color.seansTextSecondary.opacity(0.2), lineWidth: 1)
-            )
-            .shadow(color: Color.seansTextPrimary.opacity(0.08), radius: 8, y: 4)
         }
+        .buttonStyle(SeansSecondaryButtonStyle(isLoading: userRepo.isLoading))
         .disabled(userRepo.isLoading)
-        .opacity(userRepo.isLoading ? 0.6 : 1)
     }
 
     // MARK: - Actions

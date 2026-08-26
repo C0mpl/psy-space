@@ -11,6 +11,7 @@ struct RescheduleSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AvailabilityRepository.self) private var availabilityRepo
     @Environment(BookingRepository.self) private var bookingRepo
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let booking: Booking
     let rescheduledBy: CancelledBy
@@ -24,36 +25,43 @@ struct RescheduleSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: Spacing.lg) {
-                    currentBookingCard
+            ZStack {
+                ScrollView {
+                    VStack(spacing: Spacing.lg) {
+                        currentBookingCard
 
-                    dateSection
+                        dateSection
 
-                    if !availableSlots.isEmpty {
-                        slotsSection
-                    } else if availabilityRepo.isWorkingDay(selectedWeekday) {
-                        noSlotsView
-                    } else {
-                        dayOffView
+                        if !availableSlots.isEmpty {
+                            slotsSection
+                        } else if availabilityRepo.isWorkingDay(selectedWeekday) {
+                            noSlotsView
+                        } else {
+                            dayOffView
+                        }
                     }
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.bottom, Spacing.xxl)
                 }
-                .padding(.horizontal, Spacing.md)
-                .padding(.bottom, Spacing.xxl)
+                .background(Color.seansBackground)
+
+                if isLoading {
+                    SeansLoadingOverlay(message: "Надсилаємо запит...")
+                }
             }
-            .background(Color.seansBackground)
-            .navigationTitle("Перенести сеанс")
+            .navigationTitle("Запит на перенесення")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Скасувати") {
                         dismiss()
                     }
+                    .disabled(isLoading)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     if let slot = selectedSlot {
-                        Button("Готово") {
+                        Button("Надіслати") {
                             reschedule(to: slot)
                         }
                         .fontWeight(.semibold)
@@ -79,7 +87,24 @@ struct RescheduleSheet: View {
         let existingBookings = bookingRepo.bookings(for: selectedDate)
             .filter { $0.id != booking.id } // Exclude current booking
         return availabilityRepo.generateTimeSlots(for: selectedDate, existingBookings: existingBookings)
-            .filter { !$0.isBooked && $0.startTime > .now }
+            .filter { slot in
+                // Exclude booked slots and past slots
+                guard !slot.isBooked && slot.startTime > .now else { return false }
+
+                // Exclude the current booking's slot if same date
+                if Calendar.current.isDate(selectedDate, inSameDayAs: booking.date) {
+                    let bookingHour = Calendar.current.component(.hour, from: booking.startTime)
+                    let bookingMinute = Calendar.current.component(.minute, from: booking.startTime)
+                    let slotHour = Calendar.current.component(.hour, from: slot.startTime)
+                    let slotMinute = Calendar.current.component(.minute, from: slot.startTime)
+
+                    if bookingHour == slotHour && bookingMinute == slotMinute {
+                        return false
+                    }
+                }
+
+                return true
+            }
     }
 
     // MARK: - Views
@@ -102,9 +127,7 @@ struct RescheduleSheet: View {
             .font(.subheadline)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.md)
-        .background(Color.seansCardBackground)
-        .clipShape(.rect(cornerRadius: CornerRadius.md))
+        .seansCard(elevation: .low)
     }
 
     private var dateSection: some View {
@@ -124,8 +147,12 @@ struct RescheduleSheet: View {
             .padding(Spacing.sm)
             .background(Color.seansCardBackground)
             .clipShape(.rect(cornerRadius: CornerRadius.lg))
+            .elevation(.low)
             .onChange(of: selectedDate) { _, _ in
                 selectedSlot = nil
+                if !reduceMotion {
+                    HapticService.selection()
+                }
             }
         }
     }
@@ -142,12 +169,14 @@ struct RescheduleSheet: View {
                 GridItem(.flexible())
             ], spacing: Spacing.sm) {
                 ForEach(availableSlots) { slot in
-                    SlotButton(
-                        slot: slot,
-                        isSelected: selectedSlot?.id == slot.id
-                    ) {
-                        selectedSlot = slot
+                    Button {
+                        withAnimation(reduceMotion ? nil : SeansAnimation.quick) {
+                            selectedSlot = slot
+                        }
+                    } label: {
+                        Text(slot.startTimeFormatted)
                     }
+                    .buttonStyle(SeansSlotButtonStyle(isSelected: selectedSlot?.id == slot.id))
                 }
             }
         }
@@ -195,53 +224,31 @@ struct RescheduleSheet: View {
 
         Task {
             do {
-                try await bookingRepo.rescheduleBooking(
+                try await bookingRepo.requestReschedule(
                     booking.bookingId,
                     to: slot,
                     newDate: selectedDate,
                     by: rescheduledBy
                 )
+                HapticService.notification(.success)
                 dismiss()
                 onComplete()
             } catch let error as BookingError {
+                HapticService.notification(.error)
                 switch error {
                 case .slotUnavailable:
                     errorMessage = "Цей час вже зайнятий. Оберіть інший."
                 default:
-                    errorMessage = "Не вдалося перенести сеанс."
+                    errorMessage = "Не вдалося надіслати запит."
                 }
                 showingError = true
             } catch {
-                errorMessage = "Не вдалося перенести сеанс."
+                HapticService.notification(.error)
+                errorMessage = "Не вдалося надіслати запит."
                 showingError = true
             }
             isLoading = false
         }
-    }
-}
-
-// MARK: - Slot Button
-
-private struct SlotButton: View {
-    let slot: TimeSlot
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(slot.startTimeFormatted)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(isSelected ? .white : Color.seansTextPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.sm)
-                .background(isSelected ? Color.seansPrimary : Color.seansCardBackground)
-                .clipShape(.rect(cornerRadius: CornerRadius.sm))
-                .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.sm)
-                        .stroke(Color.seansPrimary.opacity(0.3), lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
     }
 }
 

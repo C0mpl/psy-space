@@ -13,18 +13,29 @@ struct User: Identifiable, Codable, Equatable, Sendable {
     let name: String
     let isTherapist: Bool
     let createdAt: Date
+    var paymentCredit: Int  // Credit in kopiykas from cancelled sessions
 
     init(
         id: String = UUID().uuidString,
         email: String? = nil,
         name: String,
         isTherapist: Bool,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        paymentCredit: Int = 0
     ) {
         self.id = id
         self.email = email
         self.name = name
         self.isTherapist = isTherapist
         self.createdAt = createdAt
+        self.paymentCredit = paymentCredit
+    }
+
+    var paymentCreditUAH: Int {
+        paymentCredit / 100
+    }
+
+    var hasCredit: Bool {
+        paymentCredit > 0
     }
 }

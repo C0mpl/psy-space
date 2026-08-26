@@ -1,6 +1,7 @@
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
+import {onRequest} from "firebase-functions/v2/https";
 import {initializeApp} from "firebase-admin/app";
-import {getFirestore} from "firebase-admin/firestore";
+import {getFirestore, FieldValue} from "firebase-admin/firestore";
 import {getMessaging} from "firebase-admin/messaging";
 
 initializeApp();
@@ -207,3 +208,152 @@ async function handleReschedule(booking: Booking, bookingId: string) {
 
   return null;
 }
+
+// Monobank payment webhook interface
+interface MonobankWebhookPayload {
+  invoiceId: string;
+  status: "created" | "processing" | "hold" | "success" | "failure" |
+    "reversed" | "expired";
+  amount: number;
+  ccy: number;
+  finalAmount?: number;
+  reference?: string;
+  createdDate?: string;
+  modifiedDate?: string;
+}
+
+interface PendingBooking {
+  clientId: string;
+  clientName: string;
+  date: FirebaseFirestore.Timestamp;
+  startTime: FirebaseFirestore.Timestamp;
+  endTime: FirebaseFirestore.Timestamp;
+  status: string;
+  createdAt: FirebaseFirestore.Timestamp;
+  paymentId: string;
+  paymentStatus: string;
+  paidAmount?: number;
+}
+
+// Note: Monobank signature verification can be added here for enhanced security.
+// Requires the X-Sign header and Monobank's public key.
+// See: https://api.monobank.ua/docs/acquiring.html#tag/Vebhuki
+
+/**
+ * Monobank webhook handler for payment status updates.
+ * Called by Monobank when a payment status changes.
+ */
+export const monobankWebhook = onRequest(async (req, res) => {
+  // Only accept POST requests
+  if (req.method !== "POST") {
+    res.status(405).send("Method Not Allowed");
+    return;
+  }
+
+  const rawBody = JSON.stringify(req.body);
+  const signature = req.headers["x-sign"] as string;
+
+  // Optional: Verify signature if public key is configured
+  // const pubKey = process.env.MONOBANK_PUBLIC_KEY;
+  // if (pubKey && signature) {
+  //   if (!verifyMonobankSignature(rawBody, signature, pubKey)) {
+  //     console.error("Invalid Monobank signature");
+  //     res.status(401).send("Invalid signature");
+  //     return;
+  //   }
+  // }
+
+  console.log("Monobank webhook received:", rawBody);
+  console.log("X-Sign header:", signature);
+
+  const payload = req.body as MonobankWebhookPayload;
+  const {invoiceId, status, amount, reference} = payload;
+
+  if (!invoiceId || !status) {
+    console.error("Missing required fields in webhook payload");
+    res.status(400).send("Bad Request");
+    return;
+  }
+
+  // Find pending booking by reference (booking ID)
+  if (!reference) {
+    console.log("No reference in webhook, skipping");
+    res.status(200).send("OK");
+    return;
+  }
+
+  try {
+    const pendingRef = db.collection("pendingBookings").doc(reference);
+    const pendingDoc = await pendingRef.get();
+
+    if (!pendingDoc.exists) {
+      console.log(`No pending booking found for reference: ${reference}`);
+      res.status(200).send("OK");
+      return;
+    }
+
+    const pendingBooking = pendingDoc.data() as PendingBooking;
+
+    // Map Monobank status to our payment status
+    let paymentStatus: string;
+    switch (status) {
+    case "hold":
+    case "success":
+      paymentStatus = "success";
+      break;
+    case "failure":
+      paymentStatus = "failure";
+      break;
+    case "expired":
+    case "reversed":
+      paymentStatus = "expired";
+      break;
+    default:
+      paymentStatus = "processing";
+    }
+
+    // Update pending booking status
+    await pendingRef.update({
+      paymentStatus,
+      paidAmount: amount,
+      paidAt: paymentStatus === "success" ?
+        FieldValue.serverTimestamp() : null,
+    });
+
+    // If payment successful, create confirmed booking
+    if (paymentStatus === "success") {
+      const bookingData = {
+        ...pendingBooking,
+        paymentStatus: "success",
+        paidAmount: amount,
+        paidAt: FieldValue.serverTimestamp(),
+        status: "confirmed",
+      };
+
+      // Create in bookings collection
+      await db.collection("bookings").doc(reference).set(bookingData);
+
+      // Delete from pending
+      await pendingRef.delete();
+
+      console.log(`Booking ${reference} confirmed after payment`);
+
+      // Optionally notify therapist of new booking
+      const therapistId = await getTherapistId();
+      if (therapistId) {
+        const {dateStr, timeStr} = formatDateTime(pendingBooking.startTime);
+        await sendPush(
+          therapistId,
+          "Новий запис",
+          `${pendingBooking.clientName} записався на ${dateStr} о ${timeStr}`,
+          {bookingId: reference, type: "new_booking"}
+        );
+      }
+    }
+
+    res.status(200).send("OK");
+  } catch (error) {
+    console.error("Error processing webhook:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
