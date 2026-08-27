@@ -2,7 +2,7 @@
 //  NotificationRepository.swift
 //  Seans
 //
-//  Created by Claude on 24.08.2026.
+//  Created by Ilias Mirzoiev on 24.08.2026.
 //
 
 import Foundation
@@ -11,17 +11,11 @@ import SwiftUI
 @Observable
 @MainActor
 final class NotificationRepository {
-    // MARK: - State
-
     var pendingNotifications: [CancellationNotification] = []
     var currentNotification: CancellationNotification?
 
-    // MARK: - Private
-
     private let defaults = UserDefaults.standard
     private let lastCheckedKey = "lastCancellationCheck"
-
-    // MARK: - Check for Cancellations
 
     func checkForCancellations(bookings: [Booking], currentUserId: String, isTherapist: Bool) {
         let lastChecked = defaults.object(forKey: lastCheckedKey) as? Date ?? .distantPast
@@ -33,7 +27,6 @@ final class NotificationRepository {
                 return false
             }
 
-            // Show notification only if cancelled by the OTHER party
             if isTherapist {
                 return booking.cancelledBy == .client
             } else {
@@ -49,12 +42,10 @@ final class NotificationRepository {
             )
         }
 
-        // Show first notification
         if let first = pendingNotifications.first {
             currentNotification = first
         }
 
-        // Update last checked time
         defaults.set(Date.now, forKey: lastCheckedKey)
     }
 
@@ -69,8 +60,6 @@ final class NotificationRepository {
         currentNotification = nil
     }
 }
-
-// MARK: - Notification Model
 
 struct CancellationNotification: Identifiable {
     let id: String

@@ -2,7 +2,7 @@
 //  Payment.swift
 //  Seans
 //
-//  Created by Claude on 25.08.2026.
+//  Created by Ilias Mirzoiev on 25.08.2026.
 //
 
 import Foundation
@@ -11,7 +11,7 @@ struct Payment: Identifiable, Codable, Equatable, Sendable {
     var id: String { invoiceId }
     let invoiceId: String
     let bookingReference: String
-    let amount: Int  // in kopiykas (1 UAH = 100 kopiykas)
+    let amount: Int
     let pageUrl: String
     var status: PaymentStatus
     let createdAt: Date
@@ -22,7 +22,7 @@ struct Payment: Identifiable, Codable, Equatable, Sendable {
     }
 
     var amountFormatted: String {
-        "\(amountInUAH) \u{20B4}"  // UAH symbol
+        "\(amountInUAH) \u{20B4}"
     }
 }
 

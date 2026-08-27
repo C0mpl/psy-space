@@ -2,7 +2,7 @@
 //  CancelBookingSheet.swift
 //  Seans
 //
-//  Created by Claude on 24.08.2026.
+//  Created by Ilias Mirzoiev on 24.08.2026.
 //
 
 import SwiftUI
@@ -17,7 +17,7 @@ struct CancelBookingSheet: View {
     let isTherapist: Bool
     let onConfirm: (_ refund: Bool) -> Void
 
-    @State private var shouldRefund = true  // Default to refund for therapist
+    @State private var shouldRefund = true
 
     private var monobankPaidAmount: Int {
         booking.paidAmount ?? 0
@@ -71,7 +71,6 @@ struct CancelBookingSheet: View {
                     }
                     .padding(.top, Spacing.md)
 
-                    // Refund/Credit policy info
                     if hasAnyPayment {
                         if isTherapist {
                             therapistRefundCard
@@ -120,12 +119,9 @@ struct CancelBookingSheet: View {
         }
     }
 
-    // MARK: - Therapist Refund Card
-
     @ViewBuilder
     private var therapistRefundCard: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            // Header with total
             HStack(spacing: Spacing.sm) {
                 Image(systemName: "creditcard.fill")
                     .foregroundStyle(Color.seansPrimary)
@@ -141,9 +137,7 @@ struct CancelBookingSheet: View {
                     .foregroundStyle(Color.seansTextPrimary)
             }
 
-            // Payment breakdown
             if monobankPaidAmount > 0 && usedCreditAmount > 0 {
-                // Mixed payment
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     HStack {
                         Text("Картка:")
@@ -161,7 +155,6 @@ struct CancelBookingSheet: View {
                 .font(.caption)
             }
 
-            // Refund toggle (only if there's Monobank payment)
             if monobankPaidAmount > 0 {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Toggle(isOn: $shouldRefund) {
@@ -194,7 +187,6 @@ struct CancelBookingSheet: View {
                     }
                 }
             } else {
-                // Credit-only payment - no toggle, just info
                 HStack(spacing: Spacing.xs) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.seansSuccess)
@@ -209,8 +201,6 @@ struct CancelBookingSheet: View {
         .background(Color.seansPrimary.opacity(0.1))
         .clipShape(.rect(cornerRadius: CornerRadius.md))
     }
-
-    // MARK: - Client Credit Policy Card
 
     @ViewBuilder
     private var clientCreditPolicyCard: some View {

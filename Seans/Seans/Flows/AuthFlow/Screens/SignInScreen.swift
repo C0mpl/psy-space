@@ -2,7 +2,7 @@
 //  SignInScreen.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import SwiftUI
@@ -16,7 +16,7 @@ struct SignInScreen: View {
             ZStack {
                 backgroundLayer(in: geometry)
 
-                ScrollView(showsIndicators: false) {
+                ScrollView {
                     VStack(spacing: 0) {
                         Spacer(minLength: geometry.size.height * 0.08)
 
@@ -31,33 +31,29 @@ struct SignInScreen: View {
                     .frame(minHeight: geometry.size.height)
                     .padding(.horizontal, Spacing.lg)
                 }
+                .scrollIndicators(.hidden)
             }
         }
         .navigationBarBackButtonHidden()
     }
-
-    // MARK: - Background
 
     private func backgroundLayer(in geometry: GeometryProxy) -> some View {
         ZStack {
             Color.seansBackgroundWarm
                 .ignoresSafeArea()
 
-            // Top-right decorative blob
             Circle()
                 .fill(Color.seansDecorative1)
                 .frame(width: geometry.size.width * 0.7)
                 .blur(radius: 60)
                 .offset(x: geometry.size.width * 0.4, y: -geometry.size.height * 0.15)
 
-            // Bottom-left decorative blob
             Circle()
                 .fill(Color.seansDecorative2)
                 .frame(width: geometry.size.width * 0.6)
                 .blur(radius: 50)
                 .offset(x: -geometry.size.width * 0.35, y: geometry.size.height * 0.35)
 
-            // Center accent
             Ellipse()
                 .fill(Color.seansDecorative3)
                 .frame(width: geometry.size.width * 0.5, height: geometry.size.width * 0.3)
@@ -65,8 +61,6 @@ struct SignInScreen: View {
                 .offset(y: geometry.size.height * 0.1)
         }
     }
-
-    // MARK: - Branding
 
     private var brandingSection: some View {
         VStack(spacing: Spacing.lg) {
@@ -88,17 +82,14 @@ struct SignInScreen: View {
 
     private var logoView: some View {
         ZStack {
-            // Outer glow
             Circle()
                 .fill(Color.seansPrimary.opacity(0.15))
                 .frame(width: logoSize * 2.4, height: logoSize * 2.4)
 
-            // Middle ring
             Circle()
                 .fill(Color.seansPrimary.opacity(0.25))
                 .frame(width: logoSize * 1.8, height: logoSize * 1.8)
 
-            // Inner circle
             Circle()
                 .fill(
                     LinearGradient(
@@ -114,8 +105,6 @@ struct SignInScreen: View {
                 .foregroundStyle(.white)
         }
     }
-
-    // MARK: - Sign In
 
     private var signInSection: some View {
         VStack(spacing: Spacing.md) {
@@ -145,16 +134,12 @@ struct SignInScreen: View {
         .disabled(userRepo.isLoading)
     }
 
-    // MARK: - Actions
-
     private func signInWithGoogle() {
         Task {
             await userRepo.signInWithGoogle()
         }
     }
 }
-
-// MARK: - Google Logo
 
 private struct GoogleLogo: View {
     var body: some View {
@@ -163,35 +148,30 @@ private struct GoogleLogo: View {
             let center = CGPoint(x: rect.midX, y: rect.midY)
             let radius = min(size.width, size.height) / 2
 
-            // Blue (top-right)
             var bluePath = Path()
             bluePath.move(to: center)
             bluePath.addArc(center: center, radius: radius, startAngle: .degrees(-45), endAngle: .degrees(45), clockwise: false)
             bluePath.closeSubpath()
             context.fill(bluePath, with: .color(Color(red: 0.26, green: 0.52, blue: 0.96)))
 
-            // Green (bottom-right)
             var greenPath = Path()
             greenPath.move(to: center)
             greenPath.addArc(center: center, radius: radius, startAngle: .degrees(45), endAngle: .degrees(135), clockwise: false)
             greenPath.closeSubpath()
             context.fill(greenPath, with: .color(Color(red: 0.20, green: 0.66, blue: 0.33)))
 
-            // Yellow (bottom-left)
             var yellowPath = Path()
             yellowPath.move(to: center)
             yellowPath.addArc(center: center, radius: radius, startAngle: .degrees(135), endAngle: .degrees(225), clockwise: false)
             yellowPath.closeSubpath()
             context.fill(yellowPath, with: .color(Color(red: 0.98, green: 0.74, blue: 0.02)))
 
-            // Red (top-left)
             var redPath = Path()
             redPath.move(to: center)
             redPath.addArc(center: center, radius: radius, startAngle: .degrees(225), endAngle: .degrees(315), clockwise: false)
             redPath.closeSubpath()
             context.fill(redPath, with: .color(Color(red: 0.92, green: 0.26, blue: 0.21)))
 
-            // White center
             let innerRadius = radius * 0.5
             var whitePath = Path()
             whitePath.addEllipse(in: CGRect(

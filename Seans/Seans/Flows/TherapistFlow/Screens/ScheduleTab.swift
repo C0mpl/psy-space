@@ -2,7 +2,7 @@
 //  ScheduleTab.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import SwiftUI
@@ -60,8 +60,6 @@ struct ScheduleTab: View {
         }
     }
 
-    // MARK: - Actions
-
     private func cancelBooking(_ booking: Booking, refund: Bool) {
         Task {
             _ = await bookingRepo.cancelBooking(
@@ -74,8 +72,6 @@ struct ScheduleTab: View {
             bookingToCancel = nil
         }
     }
-
-    // MARK: - Sections
 
     private var statsSection: some View {
         Section {
@@ -135,8 +131,6 @@ struct ScheduleTab: View {
     }
 }
 
-// MARK: - Stat Card
-
 private struct StatCard: View {
     let title: String
     let value: String
@@ -161,8 +155,6 @@ private struct StatCard: View {
         .seansCard(elevation: .low)
     }
 }
-
-// MARK: - Booking Row
 
 private struct BookingRow: View {
     let booking: Booking
@@ -226,8 +218,6 @@ private struct BookingRow: View {
     }
 }
 
-// MARK: - Weekday Row
-
 private struct WeekdayRow: View {
     let day: Weekday
     let schedule: DaySchedule?
@@ -251,8 +241,6 @@ private struct WeekdayRow: View {
         }
     }
 }
-
-// MARK: - Weekday Enum
 
 enum Weekday: Int, CaseIterable, Identifiable {
     case monday = 2

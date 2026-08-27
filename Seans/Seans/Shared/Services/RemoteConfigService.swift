@@ -2,14 +2,12 @@
 //  RemoteConfigService.swift
 //  Seans
 //
-//  Created by Claude on 25.08.2026.
+//  Created by Ilias Mirzoiev on 25.08.2026.
 //
 
 import FirebaseFirestore
 import Foundation
 
-/// Service for managing payment configuration values
-/// All values stored in Firestore so they're shared across all devices
 actor RemoteConfigService {
     static let shared = RemoteConfigService()
 
@@ -18,20 +16,15 @@ actor RemoteConfigService {
         db.collection("config").document("payment")
     }
 
-    // Cache to avoid constant Firestore reads
     private var cachedConfig: PaymentConfig?
 
     private init() {}
-
-    // MARK: - Config Model
 
     private struct PaymentConfig {
         var testMode: Bool
         var merchantToken: String?
         var webhookUrl: String?
     }
-
-    // MARK: - Fetch Config
 
     private func fetchConfig() async -> PaymentConfig {
         do {
@@ -60,13 +53,10 @@ actor RemoteConfigService {
         return await fetchConfig()
     }
 
-    /// Refreshes cached config from Firestore
     func refreshConfig() async {
         cachedConfig = nil
         _ = await fetchConfig()
     }
-
-    // MARK: - Test Mode
 
     var isTestMode: Bool {
         get async {
@@ -87,8 +77,6 @@ actor RemoteConfigService {
             #endif
         }
     }
-
-    // MARK: - Monobank Token
 
     var monobankMerchantToken: String? {
         get async {
@@ -123,8 +111,6 @@ actor RemoteConfigService {
             #endif
         }
     }
-
-    // MARK: - Webhook URL
 
     var monobankWebhookUrl: String? {
         get async {

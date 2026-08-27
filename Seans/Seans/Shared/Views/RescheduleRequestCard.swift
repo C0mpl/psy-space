@@ -2,7 +2,7 @@
 //  RescheduleRequestCard.swift
 //  Seans
 //
-//  Created by Claude on 25.08.2026.
+//  Created by Ilias Mirzoiev on 25.08.2026.
 //
 
 import SwiftUI
@@ -51,8 +51,6 @@ struct RescheduleRequestCard: View {
         }
     }
 
-    // MARK: - Sections
-
     private func headerSection(request: RescheduleRequest) -> some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: "arrow.triangle.2.circlepath")
@@ -75,7 +73,6 @@ struct RescheduleRequestCard: View {
 
     private func timeComparisonSection(request: RescheduleRequest) -> some View {
         HStack(spacing: Spacing.md) {
-            // Current time
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text("Зараз")
                     .font(.caption)
@@ -94,7 +91,6 @@ struct RescheduleRequestCard: View {
                 .foregroundStyle(Color.seansWarning)
                 .font(.title3)
 
-            // New time
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text("Новий час")
                     .font(.caption)
@@ -169,15 +165,11 @@ struct RescheduleRequestCard: View {
         }
     }
 
-    // MARK: - Helpers
-
     private func requestedByText(request: RescheduleRequest) -> String {
         let requester = request.requestedBy == .therapist ? "Терапевт" : "Клієнт"
         let timeAgo = request.requestedAt.formatted(.relative(presentation: .named))
         return "\(requester) надіслав \(timeAgo)"
     }
-
-    // MARK: - Actions
 
     private func approveRequest() {
         isApproving = true

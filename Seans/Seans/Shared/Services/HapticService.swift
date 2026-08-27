@@ -2,7 +2,7 @@
 //  HapticService.swift
 //  Seans
 //
-//  Created by Claude on 25.08.2026.
+//  Created by Ilias Mirzoiev on 25.08.2026.
 //
 
 import UIKit

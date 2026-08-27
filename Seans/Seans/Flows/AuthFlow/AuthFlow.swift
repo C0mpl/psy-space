@@ -2,7 +2,7 @@
 //  AuthFlow.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import SwiftUI

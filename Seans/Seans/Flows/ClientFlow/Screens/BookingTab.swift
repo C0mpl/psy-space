@@ -2,7 +2,7 @@
 //  BookingTab.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import SwiftUI
@@ -95,8 +95,6 @@ struct BookingTab: View {
         }
     }
 
-    // MARK: - Computed
-
     private var selectedWeekday: Int {
         Calendar.current.component(.weekday, from: selectedDate)
     }
@@ -111,8 +109,6 @@ struct BookingTab: View {
         guard let userId = userRepo.currentUser?.id else { return [] }
         return bookingRepo.upcomingBookings(for: userId)
     }
-
-    // MARK: - Sections
 
     private var myBookingsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -226,8 +222,6 @@ struct BookingTab: View {
         .padding(.vertical, Spacing.xxl)
     }
 
-    // MARK: - Actions
-
     private func cancelBooking(_ booking: Booking) {
         Task {
             await bookingRepo.cancelBooking(booking.bookingId, by: .client, reason: cancellationReason)
@@ -245,16 +239,15 @@ struct BookingTab: View {
 
         Task {
             do {
-                // Deduct credit if used
                 if let usedCredit = usedCreditAmount, usedCredit > 0 {
                     try await FirestoreService.shared.useUserCredit(userId: user.id, amount: usedCredit)
-                    // Refresh user to get updated credit balance
                     await userRepo.refreshCurrentUser()
                 }
 
                 try await bookingRepo.createBooking(
                     clientId: user.id,
                     clientName: user.name,
+                    clientEmail: user.email,
                     date: selectedDate,
                     slot: slot,
                     maxSessionsPerDay: maxSessions,
@@ -285,8 +278,6 @@ struct BookingTab: View {
         }
     }
 }
-
-// MARK: - My Booking Card
 
 private struct MyBookingCard: View {
     @Environment(UserRepository.self) private var userRepo

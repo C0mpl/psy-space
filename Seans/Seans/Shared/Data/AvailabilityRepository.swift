@@ -2,7 +2,7 @@
 //  AvailabilityRepository.swift
 //  Seans
 //
-//  Created by Claude on 24.08.2026.
+//  Created by Ilias Mirzoiev on 24.08.2026.
 //
 
 import FirebaseFirestore
@@ -11,24 +11,16 @@ import Foundation
 @Observable
 @MainActor
 final class AvailabilityRepository {
-    // MARK: - State
-
     var settings: AvailabilitySettings = .default
     var isLoading = false
     var error: Error?
 
-    // MARK: - Private
-
     private let firestore = FirestoreService.shared
     private var listener: ListenerRegistration?
-
-    // MARK: - Init
 
     init() {
         startListening()
     }
-
-    // MARK: - Listening
 
     private func startListening() {
         listener = firestore.listenToAvailability { [weak self] settings in
@@ -37,8 +29,6 @@ final class AvailabilityRepository {
             }
         }
     }
-
-    // MARK: - Fetch
 
     func fetch() async {
         isLoading = true
@@ -50,8 +40,6 @@ final class AvailabilityRepository {
             self.error = error
         }
     }
-
-    // MARK: - Updates
 
     func updateMaxSessions(_ count: Int) {
         settings.maxSessionsPerWeek = max(1, count)
@@ -88,8 +76,6 @@ final class AvailabilityRepository {
         }
     }
 
-    // MARK: - Slot Generation
-
     func generateTimeSlots(for date: Date, existingBookings: [Booking]) -> [TimeSlot] {
         let calendar = Calendar.current
         let weekday = calendar.component(.weekday, from: date)
@@ -104,14 +90,11 @@ final class AvailabilityRepository {
         let breakDuration = settings.breakBetweenSessionsMinutes
         let slotInterval = sessionDuration + breakDuration
 
-        // Count existing confirmed bookings for this day
         let confirmedBookings = existingBookings.filter { $0.status != .cancelled }
         let bookedCount = confirmedBookings.count
 
-        // Check if daily limit is reached
         let dailyLimitReached = daySchedule.maxSessionsPerDay.map { bookedCount >= $0 } ?? false
 
-        // Generate slots for each time window
         for window in daySchedule.timeWindows {
             guard window.isValid else { continue }
 
@@ -123,10 +106,9 @@ final class AvailabilityRepository {
 
                 let currentTimestamp = currentTime.timeIntervalSince1970
                 let isBookedByTime = confirmedBookings.contains { booking in
-                    abs(booking.startTime.timeIntervalSince1970 - currentTimestamp) < 60 // Within 1 minute
+                    abs(booking.startTime.timeIntervalSince1970 - currentTimestamp) < 60
                 }
 
-                // Slot is unavailable if it's booked OR if daily limit is reached
                 let isUnavailable = isBookedByTime || (dailyLimitReached && !isBookedByTime)
 
                 let slot = TimeSlot(
@@ -142,11 +124,8 @@ final class AvailabilityRepository {
             }
         }
 
-        // Sort slots by start time
         return slots.sorted { $0.startTime < $1.startTime }
     }
-
-    // MARK: - Helpers
 
     func isWorkingDay(_ weekday: Int) -> Bool {
         settings.weeklySchedule.schedule(for: weekday)?.isEnabled ?? false

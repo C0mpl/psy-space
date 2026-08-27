@@ -2,13 +2,14 @@
 //  ClientProfileTab.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import SwiftUI
 
 struct ClientProfileTab: View {
     @Environment(UserRepository.self) private var userRepo
+    @Environment(BookingRepository.self) private var bookingRepo
 
     var body: some View {
         NavigationStack {
@@ -94,4 +95,5 @@ struct ClientProfileTab: View {
 #Preview {
     ClientProfileTab()
         .environment(UserRepository())
+        .environment(BookingRepository())
 }

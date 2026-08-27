@@ -2,12 +2,10 @@
 //  Availability.swift
 //  Seans
 //
-//  Created by Claude on 24.08.2026.
+//  Created by Ilias Mirzoiev on 24.08.2026.
 //
 
 import Foundation
-
-// MARK: - Weekly Schedule
 
 struct WeeklySchedule: Codable, Equatable, Sendable {
     var monday: DaySchedule?
@@ -21,7 +19,6 @@ struct WeeklySchedule: Codable, Equatable, Sendable {
     static let empty = WeeklySchedule()
 
     func schedule(for weekday: Int) -> DaySchedule? {
-        // weekday: 1 = Sunday, 2 = Monday, ..., 7 = Saturday
         switch weekday {
         case 1: return sunday
         case 2: return monday
@@ -51,9 +48,8 @@ struct WeeklySchedule: Codable, Equatable, Sendable {
 struct DaySchedule: Codable, Equatable, Sendable {
     var timeWindows: [TimeWindow]
     var isEnabled: Bool
-    var maxSessionsPerDay: Int?  // nil = unlimited
+    var maxSessionsPerDay: Int?
 
-    // Legacy fields for backward compatibility with existing Firestore data
     private var startTime: TimeOfDay?
     private var endTime: TimeOfDay?
 
@@ -69,7 +65,6 @@ struct DaySchedule: Codable, Equatable, Sendable {
         self.endTime = nil
     }
 
-    // Legacy initializer for backward compatibility
     init(
         startTime: TimeOfDay,
         endTime: TimeOfDay,
@@ -83,19 +78,16 @@ struct DaySchedule: Codable, Equatable, Sendable {
         self.endTime = nil
     }
 
-    // Custom decoding to handle both old and new format
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
         maxSessionsPerDay = try container.decodeIfPresent(Int.self, forKey: .maxSessionsPerDay)
 
-        // Try to decode new format first
         if let windows = try? container.decode([TimeWindow].self, forKey: .timeWindows) {
             timeWindows = windows
             startTime = nil
             endTime = nil
         } else {
-            // Fall back to legacy format
             let legacyStart = try container.decode(TimeOfDay.self, forKey: .startTime)
             let legacyEnd = try container.decode(TimeOfDay.self, forKey: .endTime)
             timeWindows = [TimeWindow(startTime: legacyStart, endTime: legacyEnd)]
@@ -109,7 +101,6 @@ struct DaySchedule: Codable, Equatable, Sendable {
         try container.encode(timeWindows, forKey: .timeWindows)
         try container.encode(isEnabled, forKey: .isEnabled)
         try container.encodeIfPresent(maxSessionsPerDay, forKey: .maxSessionsPerDay)
-        // Also encode legacy fields for backward compatibility
         if let first = timeWindows.first {
             try container.encode(first.startTime, forKey: .startTime)
             try container.encode(first.endTime, forKey: .endTime)
@@ -120,18 +111,14 @@ struct DaySchedule: Codable, Equatable, Sendable {
         case timeWindows, isEnabled, maxSessionsPerDay, startTime, endTime
     }
 
-    /// Total available minutes across all time windows
     var totalMinutes: Int {
         timeWindows.reduce(0) { $0 + $1.totalMinutes }
     }
 
-    /// Formatted summary of time windows (e.g., "9:00-12:00, 14:00-18:00")
     var formattedSummary: String {
         timeWindows.map { $0.formatted }.joined(separator: ", ")
     }
 }
-
-// MARK: - Time Window
 
 struct TimeWindow: Codable, Equatable, Sendable, Identifiable {
     var id: String
@@ -180,8 +167,6 @@ struct TimeOfDay: Codable, Equatable, Comparable, Sendable {
     }
 }
 
-// MARK: - Availability Settings
-
 struct AvailabilitySettings: Codable, Equatable, Sendable {
     var maxSessionsPerWeek: Int
     var sessionDurationMinutes: Int
@@ -197,8 +182,6 @@ struct AvailabilitySettings: Codable, Equatable, Sendable {
         sessionPriceUAH: 1500
     )
 }
-
-// MARK: - Time Slot
 
 struct TimeSlot: Identifiable, Equatable, Sendable {
     let id: String

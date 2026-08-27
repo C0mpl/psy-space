@@ -2,7 +2,7 @@
 //  UserRepository.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import FirebaseAuth
@@ -12,15 +12,11 @@ import Foundation
 @Observable
 @MainActor
 final class UserRepository {
-    // MARK: - Dependencies
-
     private let authService = AuthService.shared
     private let firestore = FirestoreService.shared
     private let storage: UserStorage?
     private var authListener: AuthStateDidChangeListenerHandle?
     private var userListener: ListenerRegistration?
-
-    // MARK: - State
 
     var currentUser: User?
     var isLoading = false
@@ -28,14 +24,10 @@ final class UserRepository {
 
     var isAuthenticated: Bool { currentUser != nil }
 
-    // MARK: - Init
-
     init() {
         self.storage = try? UserStorage()
         setupAuthListener()
     }
-
-    // MARK: - Auth Listener
 
     private func setupAuthListener() {
         Task {
@@ -53,21 +45,16 @@ final class UserRepository {
     }
 
     private func handleFirebaseUser(_ firebaseUser: FirebaseAuth.User) {
-        // Check if we have stored user data locally
         if let storedUser = storage?.loadUser(), storedUser.id == firebaseUser.uid {
             currentUser = storedUser
-            // Start listening for real-time updates (credit changes, etc.)
             startUserListener(userId: firebaseUser.uid)
             return
         }
 
-        // New user - check Firestore for existing data (including isTherapist flag)
         Task {
             await loadOrCreateUser(firebaseUser: firebaseUser)
         }
     }
-
-    // MARK: - User Document Listener
 
     private func startUserListener(userId: String) {
         stopUserListener()
@@ -80,7 +67,6 @@ final class UserRepository {
             Task { @MainActor in
                 guard let self, let user else { return }
 
-                // Update local state if credit changed
                 if self.currentUser?.paymentCredit != user.paymentCredit {
                     #if DEBUG
                     print("💰 UserRepository: Credit updated \(self.currentUser?.paymentCredit ?? 0) → \(user.paymentCredit)")
@@ -99,7 +85,6 @@ final class UserRepository {
     }
 
     private func loadOrCreateUser(firebaseUser: FirebaseAuth.User) async {
-        // Try to load existing user from Firestore (may have isTherapist set by admin)
         if let existingUser = try? await firestore.fetchUser(userId: firebaseUser.uid) {
             storage?.saveUser(existingUser)
             currentUser = existingUser
@@ -110,8 +95,6 @@ final class UserRepository {
             return
         }
 
-        // New user - create with isTherapist: false (default is client)
-        // To make someone therapist, set isTherapist: true in Firestore manually
         let user = User(
             id: firebaseUser.uid,
             email: firebaseUser.email,
@@ -122,15 +105,12 @@ final class UserRepository {
         storage?.saveUser(user)
         currentUser = user
 
-        // Create new user in Firestore (includes isTherapist: false)
         try? await firestore.createUser(user)
         startUserListener(userId: firebaseUser.uid)
         #if DEBUG
         print("✅ Created new user in Firestore (isTherapist: false)")
         #endif
     }
-
-    // MARK: - Sign In
 
     func signInWithGoogle() async {
         isLoading = true
@@ -140,7 +120,6 @@ final class UserRepository {
         do {
             let result = try await authService.signInWithGoogle()
 
-            // Check Firestore for existing user (may have isTherapist set by admin)
             if let existingUser = try? await firestore.fetchUser(userId: result.userId) {
                 storage?.saveUser(existingUser)
                 currentUser = existingUser
@@ -151,18 +130,16 @@ final class UserRepository {
                 return
             }
 
-            // New user - default to client role
             let user = User(
                 id: result.userId,
                 email: result.email,
                 name: result.name,
-                isTherapist: false  // Default: client. Set to true in Firestore for therapist.
+                isTherapist: false
             )
 
             storage?.saveUser(user)
             currentUser = user
 
-            // Create new user in Firestore (includes isTherapist: false)
             do {
                 try await firestore.createUser(user)
                 startUserListener(userId: result.userId)
@@ -179,8 +156,6 @@ final class UserRepository {
         }
     }
 
-    // MARK: - Refresh
-
     func refreshCurrentUser() async {
         guard let userId = currentUser?.id else { return }
 
@@ -190,11 +165,22 @@ final class UserRepository {
                 storage?.saveUser(updatedUser)
             }
         } catch {
-            // Silently fail - user data will be refreshed on next sign-in
         }
     }
 
-    // MARK: - Sign Out
+    func setCalendarSyncEnabled(_ enabled: Bool) async {
+        guard var user = currentUser else { return }
+        user.calendarSyncEnabled = enabled
+
+        storage?.saveUser(user)
+        currentUser = user
+
+        try? await firestore.saveUser(user)
+
+        #if DEBUG
+        print("📅 Calendar sync set to \(enabled) for user \(user.id)")
+        #endif
+    }
 
     func signOut() {
         do {
@@ -207,8 +193,6 @@ final class UserRepository {
         }
     }
 
-    // MARK: - Debug
-
     #if DEBUG
     func debugSwitchRole() {
         guard let user = currentUser else { return }
@@ -218,18 +202,17 @@ final class UserRepository {
             name: user.name,
             isTherapist: !user.isTherapist,
             createdAt: user.createdAt,
-            paymentCredit: user.paymentCredit  // Preserve credit
+            paymentCredit: user.paymentCredit,
+            calendarSyncEnabled: user.calendarSyncEnabled
         )
         storage?.saveUser(newUser)
         currentUser = newUser
 
-        // Also save to Firestore to ensure document exists
         Task {
             try? await firestore.saveUser(newUser)
         }
     }
 
-    /// Force create user document in Firestore (for debugging)
     func debugEnsureUserExists() {
         guard let user = currentUser else { return }
         Task {

@@ -2,15 +2,12 @@
 //  PushNotificationService.swift
 //  Seans
 //
-//  Created by Claude on 24.08.2026.
+//  Created by Ilias Mirzoiev on 24.08.2026.
 //
 
 import FirebaseFirestore
 import Foundation
 import UserNotifications
-
-// TODO: Add FirebaseMessaging package when Apple Developer account is ready
-// import FirebaseMessaging
 
 @MainActor
 final class PushNotificationService: NSObject, Sendable {
@@ -22,15 +19,9 @@ final class PushNotificationService: NSObject, Sendable {
         super.init()
     }
 
-    // MARK: - Setup
-
     func setup() {
         UNUserNotificationCenter.current().delegate = self
-        // TODO: Enable when FirebaseMessaging is added
-        // Messaging.messaging().delegate = self
     }
-
-    // MARK: - Request Permission
 
     func requestPermission() async -> Bool {
         do {
@@ -43,7 +34,9 @@ final class PushNotificationService: NSObject, Sendable {
 
             return granted
         } catch {
+            #if DEBUG
             print("❌ Push notification permission error: \(error)")
+            #endif
             return false
         }
     }
@@ -53,44 +46,28 @@ final class PushNotificationService: NSObject, Sendable {
         UIApplication.shared.registerForRemoteNotifications()
     }
 
-    // MARK: - Token Storage
-
     func saveToken(for userId: String) async {
-        // TODO: Enable when FirebaseMessaging is added
-        // guard let token = Messaging.messaging().fcmToken else {
-        //     print("⚠️ No FCM token available")
-        //     return
-        // }
-        //
-        // do {
-        //     try await db.collection("userTokens").document(userId).setData([
-        //         "fcmToken": token,
-        //         "updatedAt": FieldValue.serverTimestamp()
-        //     ], merge: true)
-        //     print("✅ FCM token saved for user \(userId)")
-        // } catch {
-        //     print("❌ Failed to save FCM token: \(error)")
-        // }
     }
 
     func removeToken(for userId: String) async {
         do {
             try await db.collection("userTokens").document(userId).delete()
+            #if DEBUG
             print("✅ FCM token removed for user \(userId)")
+            #endif
         } catch {
+            #if DEBUG
             print("❌ Failed to remove FCM token: \(error)")
+            #endif
         }
     }
 }
-
-// MARK: - UNUserNotificationCenterDelegate
 
 extension PushNotificationService: UNUserNotificationCenterDelegate {
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        // Show notification even when app is in foreground
         return [.banner, .badge, .sound]
     }
 
@@ -98,7 +75,9 @@ extension PushNotificationService: UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
+        #if DEBUG
         let userInfo = response.notification.request.content.userInfo
         print("📱 Notification tapped: \(userInfo)")
+        #endif
     }
 }

@@ -20,7 +20,7 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 | **Smart Booking & Scheduling** | View therapist's availability (set in-app); book sessions with real-time slot availability. | ✅ Implemented |
 | **Google Sign-In** | Secure authentication via Google account. | ✅ Implemented |
 | **Monobank Payment Integration** | Integrated payment flow using Monobank API (invoices, Apple Pay/Google Pay via MonoPay, webhooks). | ✅ Implemented |
-| **Calendar Sync** | Optional sync of booked sessions to Apple Calendar (EventKit) or Google Calendar. | 🔲 Pending |
+| **Calendar Sync** | Booked sessions sync to Google Calendar with Meet links; clients receive email invites. | ✅ Implemented |
 | **Therapeutic Journal & Notes** | Private rich-text diary for thoughts, breakthroughs, and session prep notes. | 🔲 Pending |
 | **Mood & Emotion Tracker** | Daily emotional state check-in using a structured scale (e.g., Plutchik's Wheel of Emotions). | 🔲 Pending |
 | **Contextual Note Sharing** | Option to attach specific journal entries to an upcoming session for therapist review. | 🔲 Pending |
@@ -33,7 +33,7 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 | **Availability Management** | Set working days, hours, session duration, and breaks directly in the app. | ✅ Implemented |
 | **Real-time Booking Sync** | All bookings sync instantly via Firebase Firestore between therapist and clients. | ✅ Implemented |
 | **Dashboard Stats** | View today's session count, upcoming sessions, and weekly schedule overview. | ✅ Implemented |
-| **Calendar Sync** | Push booked sessions to Apple Calendar (EventKit) or Google Calendar. | 🔲 Pending |
+| **Calendar Sync** | Server-side Google Calendar sync with Meet links; toggle in settings. | ✅ Implemented |
 | **Client Management** | View client profiles, session history, and shared notes. | 🔲 Pending |
 | **Session Notes & Anamnesis** | Record session notes, hypotheses, and treatment observations per client. | 🔲 Pending |
 | **Cancellation Policies** | Configurable cancellation windows (e.g., free up to 24h; partial/full retention after). | ✅ Implemented |
@@ -59,10 +59,9 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 ### Third-Party Integrations
 * **Google Sign-In SDK:** OAuth 2.0 authentication flow
 * **Firebase Firestore:** Real-time NoSQL database
-* **Monobank API:** Invoice generation (`/merchant/invoice/create`), webhook handler for payment status. (Pending)
-* **Apple Calendar:** EventKit framework — direct on-device calendar access. (Pending)
-* **Google Calendar:** Google Calendar API with OAuth 2.0. (Pending)
-* **Notifications:** Apple Push Notification service (APNs), optionally via Firebase Cloud Messaging. (Pending)
+* **Monobank API:** Invoice generation (`/merchant/invoice/create`), webhook handler for payment status. ✅
+* **Google Calendar:** Server-side integration via Cloud Functions with OAuth 2.0, auto-generates Google Meet links. ✅
+* **Push Notifications:** Firebase Cloud Messaging (FCM) for booking confirmations, cancellations, and reschedules. ✅
 
 ---
 
@@ -99,14 +98,27 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
               │  ┌─────────────────────┐  │
               │  │   /availability     │  │  ← Therapist schedule settings
               │  │   /bookings         │  │  ← Client bookings (real-time sync)
+              │  │   /pendingBookings  │  │  ← Unpaid booking holds
+              │  │   /config/therapist │  │  ← Calendar OAuth tokens
               │  └─────────────────────┘  │
-              └───────────────────────────┘
+              └───────────────┬───────────┘
                               │
-                              ▼
-              ┌───────────────────────────┐
-              │     Firebase Auth         │
-              │    (Google Sign-In)       │
-              └───────────────────────────┘
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+┌───────────────┐    ┌───────────────┐    ┌───────────────┐
+│ Firebase Auth │    │Cloud Functions│    │     FCM       │
+│(Google SignIn)│    │               │    │(Push Notifs)  │
+└───────────────┘    │ • monobankWH  │    └───────────────┘
+                     │ • calendarSync│
+                     │ • cleanup jobs│
+                     └───────┬───────┘
+                             │
+              ┌──────────────┼──────────────┐
+              ▼              ▼              ▼
+       ┌───────────┐  ┌───────────┐  ┌───────────┐
+       │ Monobank  │  │  Google   │  │  Google   │
+       │   API     │  │ Calendar  │  │   Meet    │
+       └───────────┘  └───────────┘  └───────────┘
 ```
 
 ### Role Assignment
@@ -126,17 +138,18 @@ let isTherapist = firebaseUser.email?.lowercased() == therapistEmail.lowercased(
 3. **Client books a slot** → Booking saved to Firestore `/bookings` collection
 4. **Therapist sees new booking** → Firestore listener updates their dashboard
 
-### Future: Monobank Payment & Booking Workflow
+### Current: Payment & Booking Workflow
 
 1. **Selection:** Client picks an open time slot from therapist's availability.
-2. **Reservation:** The slot is temporarily locked for 15 minutes.
-3. **Invoice Creation:** Backend calls Monobank API to generate a payment invoice.
+2. **Reservation:** The slot is temporarily held during payment.
+3. **Invoice Creation:** App calls Monobank API to generate a payment invoice.
 4. **Payment Execution:** Client pays via MonoPay (Apple Pay / card).
-5. **Webhook Verification:** Monobank sends webhook to backend confirming payment.
+5. **Webhook Verification:** Cloud Function receives webhook confirming payment.
 6. **Confirmation:**
-   * Slot is permanently booked in the database.
+   * Booking is confirmed in Firestore.
    * Push notification sent to both client and therapist.
-   * Optional: Calendar event created via EventKit or Google Calendar API.
+   * Google Calendar event created with Meet link (if therapist enabled sync).
+   * Email invites sent to therapist and client.
 
 ---
 
@@ -155,12 +168,16 @@ Seans/
 │   │   └── Booking.swift       # Booking model with Firestore @DocumentID
 │   │
 │   ├── Data/
-│   │   ├── AuthService.swift       # Google Sign-In via Firebase Auth
+│   │   ├── AuthService.swift       # Google Sign-In via Firebase Auth + Calendar OAuth
 │   │   ├── UserRepository.swift    # User state, auth, role assignment
 │   │   ├── FirestoreService.swift  # Firestore CRUD operations
 │   │   ├── AvailabilityRepository.swift  # Therapist availability with Firestore sync
 │   │   ├── BookingRepository.swift       # Bookings with Firestore sync
 │   │   └── UserStorage.swift       # SwiftData local persistence
+│   │
+│   ├── Services/
+│   │   ├── CalendarService.swift       # Calendar sync coordination
+│   │   └── PushNotificationService.swift  # FCM push notifications
 │   │
 │   └── UI/
 │       └── Design.swift        # Color palette, Spacing, CornerRadius
@@ -174,16 +191,29 @@ Seans/
 │   │   ├── ClientFlow.swift    # Tab navigation for clients
 │   │   └── Screens/
 │   │       ├── BookingTab.swift    # Calendar + time slot selection
-│   │       ├── HistoryTab.swift    # Booking history (placeholder)
-│   │       └── ProfileTab.swift    # User profile (placeholder)
+│   │       ├── HistoryTab.swift    # Booking history
+│   │       └── ClientProfileTab.swift  # User profile + settings
 │   │
-│   └── TherapistFlow/
-│       ├── TherapistFlow.swift # Tab navigation for therapist
-│       └── Screens/
-│           ├── ScheduleTab.swift           # Dashboard + stats + schedule
-│           ├── AvailabilitySettingsView.swift  # Configure working hours
-│           ├── ClientsTab.swift            # Client list (placeholder)
-│           └── ProfileTab.swift            # Therapist profile (placeholder)
+│   ├── TherapistFlow/
+│   │   ├── TherapistFlow.swift # Tab navigation for therapist
+│   │   └── Screens/
+│   │       ├── ScheduleTab.swift           # Dashboard + stats + schedule
+│   │       ├── AvailabilitySettingsView.swift  # Configure working hours
+│   │       ├── ClientsTab.swift            # Client list (placeholder)
+│   │       └── TherapistProfileTab.swift   # Therapist profile + settings
+│   │
+│   └── Shared/
+│       └── CalendarSettingsView.swift  # Calendar sync toggle (therapist only)
+│
+functions/                      # Firebase Cloud Functions
+├── src/
+│   └── index.ts               # Cloud Functions:
+│                              #   - monobankWebhook: Payment confirmation
+│                              #   - createCalendarEvent: Google Calendar + Meet
+│                              #   - updateCalendarEvent: Reschedule/cancel sync
+│                              #   - cleanupOldBookings: Scheduled cleanup
+│                              #   - cleanupPendingBookings: Expire unpaid bookings
+└── .env                       # Google OAuth credentials (not in git)
 ```
 
 ---
@@ -279,11 +309,14 @@ Mental health data requires careful handling:
 - [x] Test mode for development
 - [x] Automated cleanup of old bookings (Cloud Function)
 
-### 🔲 Phase 4: Calendar Sync (Pending)
-- [ ] EventKit integration (Apple Calendar)
-- [ ] Google Calendar API integration
-- [ ] Optional sync toggle per user
-- [ ] Calendar event creation on booking
+### ✅ Phase 4: Calendar Sync (Complete)
+- [x] Google Calendar API integration (server-side Cloud Functions)
+- [x] OAuth 2.0 token exchange for server-side access
+- [x] Calendar event creation on booking with Google Meet link
+- [x] Calendar event update on reschedule
+- [x] Calendar event deletion on cancel
+- [x] Email invites sent to both therapist and client
+- [x] Optional sync toggle for therapist in settings
 
 ### 🔲 Phase 5: Client Journal (Pending)
 - [ ] Rich-text journal editor
@@ -313,14 +346,32 @@ Before running the app, configure:
    - Add `GoogleService-Info.plist` to the project
    - Enable Firestore and Authentication in Firebase Console
    - Add Google Sign-In provider in Firebase Auth
+   - Enable Cloud Functions and Cloud Messaging
 
 2. **Google Sign-In:**
    - Add URL scheme from `GoogleService-Info.plist` (`REVERSED_CLIENT_ID`)
    - Configure in Xcode: Target → Info → URL Types
 
-3. **Therapist Email:**
-   - Update `therapistEmail` in `UserRepository.swift` with the actual therapist's email
+3. **Google Calendar API:**
+   - Enable Google Calendar API in Google Cloud Console
+   - Create Web OAuth 2.0 credentials (for server-side access)
+   - Add Web Client ID and Secret to `functions/.env`
 
-4. **Firestore Collections:**
+4. **Monobank:**
+   - Get merchant token from Monobank Acquiring
+   - Configure webhook URL to Cloud Function endpoint
+
+5. **Cloud Functions:**
+   - Deploy functions: `firebase deploy --only functions`
+   - Set environment variables in `functions/.env`:
+     ```
+     GOOGLE_CLIENT_ID=<web-client-id>
+     GOOGLE_CLIENT_SECRET=<web-client-secret>
+     ```
+
+6. **Firestore Collections:**
+   - `users` (user profiles and settings)
    - `availability` (single document for therapist settings)
-   - `bookings` (collection of booking documents)
+   - `bookings` (confirmed bookings)
+   - `pendingBookings` (unpaid booking holds)
+   - `config/therapist` (calendar OAuth tokens)

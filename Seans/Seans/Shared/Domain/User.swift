@@ -2,7 +2,7 @@
 //  User.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import Foundation
@@ -13,7 +13,8 @@ struct User: Identifiable, Codable, Equatable, Sendable {
     let name: String
     let isTherapist: Bool
     let createdAt: Date
-    var paymentCredit: Int  // Credit in kopiykas from cancelled sessions
+    var paymentCredit: Int
+    var calendarSyncEnabled: Bool
 
     init(
         id: String = UUID().uuidString,
@@ -21,7 +22,8 @@ struct User: Identifiable, Codable, Equatable, Sendable {
         name: String,
         isTherapist: Bool,
         createdAt: Date = .now,
-        paymentCredit: Int = 0
+        paymentCredit: Int = 0,
+        calendarSyncEnabled: Bool = false
     ) {
         self.id = id
         self.email = email
@@ -29,6 +31,7 @@ struct User: Identifiable, Codable, Equatable, Sendable {
         self.isTherapist = isTherapist
         self.createdAt = createdAt
         self.paymentCredit = paymentCredit
+        self.calendarSyncEnabled = calendarSyncEnabled
     }
 
     var paymentCreditUAH: Int {

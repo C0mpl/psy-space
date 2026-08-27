@@ -2,7 +2,7 @@
 //  MonobankService.swift
 //  Seans
 //
-//  Created by Claude on 25.08.2026.
+//  Created by Ilias Mirzoiev on 25.08.2026.
 //
 
 import Foundation
@@ -20,8 +20,6 @@ actor MonobankService {
         config.timeoutIntervalForResource = 60
         urlSession = URLSession(configuration: config)
     }
-
-    // MARK: - Invoice Creation
 
     struct CreateInvoiceRequest: Encodable {
         let amount: Int
@@ -55,7 +53,7 @@ actor MonobankService {
             merchantPaymInfo: .init(reference: reference, destination: description),
             redirectUrl: "\(redirectScheme)://payment-callback?reference=\(reference)",
             webHookUrl: webhookUrl,
-            validity: 3600  // 1 hour
+            validity: 3600
         )
 
         var request = URLRequest(url: endpoint)
@@ -89,8 +87,6 @@ actor MonobankService {
             throw .networkError(error)
         }
     }
-
-    // MARK: - Invoice Status
 
     struct InvoiceStatusResponse: Decodable {
         let invoiceId: String
@@ -151,19 +147,16 @@ actor MonobankService {
         }
     }
 
-    // MARK: - Invoice Cancellation (Refund)
-
     struct CancelInvoiceRequest: Encodable {
         let invoiceId: String
         let extRef: String?
-        let amount: Int?  // nil = full refund, or partial amount in kopiykas
+        let amount: Int?
     }
 
     struct CancelInvoiceResponse: Decodable {
         let status: String
     }
 
-    /// Cancels/refunds an invoice. Pass amount for partial refund, or nil for full refund.
     func cancelInvoice(
         invoiceId: String,
         reference: String?,
@@ -204,7 +197,6 @@ actor MonobankService {
             let cancelResponse = try JSONDecoder().decode(CancelInvoiceResponse.self, from: data)
             let status = cancelResponse.status.lowercased()
 
-            // Accept "reversed", "processing", or "success" as successful refund initiation
             return status == "reversed" || status == "processing" || status == "success"
         } catch let paymentError as PaymentError {
             throw paymentError
@@ -221,13 +213,10 @@ actor MonobankService {
     }
 }
 
-// MARK: - Error Response
-
 private struct MonobankErrorResponse: Decodable, Sendable {
     let errCode: String?
     let errText: String?
 
-    // Explicit nonisolated Decodable conformance
     nonisolated init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         errCode = try container.decodeIfPresent(String.self, forKey: .errCode)

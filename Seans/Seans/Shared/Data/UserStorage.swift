@@ -2,7 +2,7 @@
 //  UserStorage.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import Foundation
@@ -15,13 +15,15 @@ final class StoredUser {
     var name: String
     var isTherapist: Bool
     var createdAt: Date
+    var calendarSyncEnabled: Bool
 
-    init(appleUserID: String, email: String?, name: String, isTherapist: Bool, createdAt: Date = .now) {
+    init(appleUserID: String, email: String?, name: String, isTherapist: Bool, createdAt: Date = .now, calendarSyncEnabled: Bool = false) {
         self.appleUserID = appleUserID
         self.email = email
         self.name = name
         self.isTherapist = isTherapist
         self.createdAt = createdAt
+        self.calendarSyncEnabled = calendarSyncEnabled
     }
 
     func toUser() -> User {
@@ -30,7 +32,8 @@ final class StoredUser {
             email: email,
             name: name,
             isTherapist: isTherapist,
-            createdAt: createdAt
+            createdAt: createdAt,
+            calendarSyncEnabled: calendarSyncEnabled
         )
     }
 }
@@ -55,19 +58,18 @@ final class UserStorage {
     }
 
     func saveUser(_ user: User) {
-        // Delete existing user if any
         let descriptor = FetchDescriptor<StoredUser>()
         if let existing = try? modelContext.fetch(descriptor) {
             existing.forEach { modelContext.delete($0) }
         }
 
-        // Insert new user
         let storedUser = StoredUser(
             appleUserID: user.id,
             email: user.email,
             name: user.name,
             isTherapist: user.isTherapist,
-            createdAt: user.createdAt
+            createdAt: user.createdAt,
+            calendarSyncEnabled: user.calendarSyncEnabled
         )
         modelContext.insert(storedUser)
         try? modelContext.save()

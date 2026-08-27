@@ -2,7 +2,7 @@
 //  TherapistProfileTab.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import SwiftUI
@@ -10,6 +10,7 @@ import SwiftUI
 struct TherapistProfileTab: View {
     @Environment(UserRepository.self) private var userRepo
     @Environment(AvailabilityRepository.self) private var availabilityRepo
+    @Environment(BookingRepository.self) private var bookingRepo
 
     @State private var showingPaymentSettings = false
 
@@ -32,6 +33,12 @@ struct TherapistProfileTab: View {
                     } label: {
                         Label("Оплата", systemImage: "creditcard")
                             .foregroundStyle(Color.seansTextPrimary)
+                    }
+
+                    NavigationLink {
+                        CalendarSettingsView()
+                    } label: {
+                        Label("Календар", systemImage: "calendar")
                     }
 
                     NavigationLink {
@@ -117,4 +124,5 @@ struct TherapistProfileTab: View {
     TherapistProfileTab()
         .environment(UserRepository())
         .environment(AvailabilityRepository())
+        .environment(BookingRepository())
 }

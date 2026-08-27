@@ -2,7 +2,7 @@
 //  TherapistFlow.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import SwiftUI
@@ -13,17 +13,17 @@ struct TherapistFlow: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            ScheduleTab()
-                .tabItem { Label("Розклад", systemImage: "calendar") }
-                .tag(TherapistTab.schedule)
+            Tab("Розклад", systemImage: "calendar", value: TherapistTab.schedule) {
+                ScheduleTab()
+            }
 
-            ClientsTab()
-                .tabItem { Label("Клієнти", systemImage: "person.2") }
-                .tag(TherapistTab.clients)
+            Tab("Клієнти", systemImage: "person.2", value: TherapistTab.clients) {
+                ClientsTab()
+            }
 
-            TherapistProfileTab()
-                .tabItem { Label("Профіль", systemImage: "person.circle") }
-                .tag(TherapistTab.profile)
+            Tab("Профіль", systemImage: "person.circle", value: TherapistTab.profile) {
+                TherapistProfileTab()
+            }
         }
     }
 }

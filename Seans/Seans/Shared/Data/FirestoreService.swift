@@ -2,7 +2,7 @@
 //  FirestoreService.swift
 //  Seans
 //
-//  Created by Claude on 24.08.2026.
+//  Created by Ilias Mirzoiev on 24.08.2026.
 //
 
 import FirebaseFirestore
@@ -12,8 +12,6 @@ final class FirestoreService: @unchecked Sendable {
     static let shared = FirestoreService()
 
     private var db: Firestore { Firestore.firestore() }
-
-    // MARK: - Collections
 
     private var usersCollection: CollectionReference {
         db.collection("users")
@@ -31,19 +29,26 @@ final class FirestoreService: @unchecked Sendable {
         db.collection("pendingBookings")
     }
 
-    // MARK: - Users
+    private var therapistConfigDocument: DocumentReference {
+        db.collection("config").document("therapist")
+    }
+
+    func saveTherapistAuthCode(_ authCode: String) async throws {
+        try await therapistConfigDocument.setData([
+            "calendarAuthCode": authCode,
+            "calendarAuthCodeSavedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+    }
 
     func saveUser(_ user: User, setTherapistRole: Bool = false) async throws {
-        // Don't overwrite isTherapist unless explicitly requested
-        // This allows admin to set isTherapist: true in Firestore without it being overwritten
         var data: [String: Any] = [
             "email": user.email ?? "",
             "name": user.name,
             "createdAt": user.createdAt,
-            "paymentCredit": user.paymentCredit
+            "paymentCredit": user.paymentCredit,
+            "calendarSyncEnabled": user.calendarSyncEnabled
         ]
 
-        // Only set isTherapist for new users or when explicitly requested
         if setTherapistRole {
             data["isTherapist"] = user.isTherapist
         }
@@ -54,16 +59,15 @@ final class FirestoreService: @unchecked Sendable {
         #endif
     }
 
-    /// Creates a new user with isTherapist flag (used for first-time sign-in)
     func createUser(_ user: User) async throws {
         let data: [String: Any] = [
             "email": user.email ?? "",
             "name": user.name,
             "isTherapist": user.isTherapist,
             "createdAt": user.createdAt,
-            "paymentCredit": user.paymentCredit
+            "paymentCredit": user.paymentCredit,
+            "calendarSyncEnabled": user.calendarSyncEnabled
         ]
-        // Use set without merge to create new document
         try await usersCollection.document(user.id).setData(data)
         #if DEBUG
         print("✅ New user created in Firestore: \(user.email ?? "no email")")
@@ -71,7 +75,6 @@ final class FirestoreService: @unchecked Sendable {
     }
 
     func addUserCredit(userId: String, amount: Int) async throws {
-        // Use setData with merge to create document if it doesn't exist
         try await usersCollection.document(userId).setData([
             "paymentCredit": FieldValue.increment(Int64(amount))
         ], merge: true)
@@ -81,7 +84,6 @@ final class FirestoreService: @unchecked Sendable {
     }
 
     func useUserCredit(userId: String, amount: Int) async throws {
-        // Use setData with merge to create document if it doesn't exist
         try await usersCollection.document(userId).setData([
             "paymentCredit": FieldValue.increment(Int64(-amount))
         ], merge: true)
@@ -100,7 +102,31 @@ final class FirestoreService: @unchecked Sendable {
             name: data["name"] as? String ?? "",
             isTherapist: data["isTherapist"] as? Bool ?? false,
             createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? .now,
-            paymentCredit: data["paymentCredit"] as? Int ?? 0
+            paymentCredit: data["paymentCredit"] as? Int ?? 0,
+            calendarSyncEnabled: data["calendarSyncEnabled"] as? Bool ?? false
+        )
+    }
+
+    func fetchTherapist() async throws -> User? {
+        let snapshot = try await usersCollection
+            .whereField("isTherapist", isEqualTo: true)
+            .limit(to: 1)
+            .getDocuments()
+
+        guard let doc = snapshot.documents.first else {
+            return nil
+        }
+
+        let data = doc.data()
+
+        return User(
+            id: doc.documentID,
+            email: data["email"] as? String,
+            name: data["name"] as? String ?? "",
+            isTherapist: true,
+            createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? .now,
+            paymentCredit: data["paymentCredit"] as? Int ?? 0,
+            calendarSyncEnabled: data["calendarSyncEnabled"] as? Bool ?? false
         )
     }
 
@@ -124,7 +150,8 @@ final class FirestoreService: @unchecked Sendable {
                 name: data["name"] as? String ?? "",
                 isTherapist: data["isTherapist"] as? Bool ?? false,
                 createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? .now,
-                paymentCredit: data["paymentCredit"] as? Int ?? 0
+                paymentCredit: data["paymentCredit"] as? Int ?? 0,
+                calendarSyncEnabled: data["calendarSyncEnabled"] as? Bool ?? false
             )
 
             #if DEBUG
@@ -134,8 +161,6 @@ final class FirestoreService: @unchecked Sendable {
             onChange(user)
         }
     }
-
-    // MARK: - Availability
 
     func fetchAvailability() async throws -> AvailabilitySettings {
         let snapshot = try await availabilityDocument.getDocument()
@@ -189,8 +214,6 @@ final class FirestoreService: @unchecked Sendable {
         }
     }
 
-    // MARK: - Bookings
-
     func fetchBookings() async throws -> [Booking] {
         let snapshot = try await bookingsCollection
             .order(by: "startTime", descending: false)
@@ -214,7 +237,6 @@ final class FirestoreService: @unchecked Sendable {
             print("   - No reschedule request (will be cleared)")
         }
         #endif
-        // Use setData WITHOUT merge to ensure nil fields are properly removed
         try bookingsCollection.document(booking.bookingId).setData(from: booking)
         #if DEBUG
         print("✅ FirestoreService: Booking updated")
@@ -289,8 +311,6 @@ final class FirestoreService: @unchecked Sendable {
                 onChange(bookings)
             }
     }
-
-    // MARK: - Pending Bookings (for payment flow)
 
     func createPendingBooking(_ booking: Booking) async throws {
         try pendingBookingsCollection.document(booking.bookingId).setData(from: booking)

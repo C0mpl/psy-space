@@ -2,7 +2,7 @@
 //  ClientFlow.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import SwiftUI
@@ -13,17 +13,17 @@ struct ClientFlow: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            BookingTab()
-                .tabItem { Label("Запис", systemImage: "calendar") }
-                .tag(ClientTab.booking)
+            Tab("Запис", systemImage: "calendar", value: ClientTab.booking) {
+                BookingTab()
+            }
 
-            JournalTab()
-                .tabItem { Label("Щоденник", systemImage: "book.closed") }
-                .tag(ClientTab.journal)
+            Tab("Щоденник", systemImage: "book.closed", value: ClientTab.journal) {
+                JournalTab()
+            }
 
-            ClientProfileTab()
-                .tabItem { Label("Профіль", systemImage: "person.circle") }
-                .tag(ClientTab.profile)
+            Tab("Профіль", systemImage: "person.circle", value: ClientTab.profile) {
+                ClientProfileTab()
+            }
         }
     }
 }

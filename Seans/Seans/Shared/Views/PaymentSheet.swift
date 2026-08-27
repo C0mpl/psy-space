@@ -2,7 +2,7 @@
 //  PaymentSheet.swift
 //  Seans
 //
-//  Created by Claude on 25.08.2026.
+//  Created by Ilias Mirzoiev on 25.08.2026.
 //
 
 import SwiftUI
@@ -13,8 +13,8 @@ struct PaymentSheet: View {
     let priceUAH: Int
     let clientId: String
     let clientName: String
-    let userCredit: Int  // User's current credit in kopiykas
-    let onComplete: (Payment, Int?) -> Void  // (payment, usedCreditAmount)
+    let userCredit: Int
+    let onComplete: (Payment, Int?) -> Void
     let onCancel: () -> Void
 
     @Environment(PaymentRepository.self) private var paymentRepo
@@ -25,12 +25,11 @@ struct PaymentSheet: View {
     @State private var showingError = false
     @State private var errorMessage: String?
     @State private var isTestMode = false
-    @State private var useCredit = true  // Default to using credit if available
+    @State private var useCredit = true
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Main content card
                 VStack(spacing: Spacing.md) {
                     bookingInfoCard
 
@@ -44,7 +43,6 @@ struct PaymentSheet: View {
 
                 Spacer(minLength: Spacing.md)
 
-                // Action area
                 VStack(spacing: Spacing.sm) {
                     statusIndicator
                     actionButtons
@@ -80,8 +78,6 @@ struct PaymentSheet: View {
             }
         }
     }
-
-    // MARK: - Computed
 
     private var isWaitingForPayment: Bool {
         payment != nil && payment?.status.isTerminal == false
@@ -120,11 +116,8 @@ struct PaymentSheet: View {
         amountToPay == 0 && useCredit
     }
 
-    // MARK: - Sections
-
     private var bookingInfoCard: some View {
         HStack(spacing: Spacing.md) {
-            // Date/time column
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text("Сеанс")
                     .font(.caption)
@@ -141,7 +134,6 @@ struct PaymentSheet: View {
 
             Spacer()
 
-            // Price badge
             VStack(alignment: .trailing, spacing: Spacing.xxs) {
                 Text("Вартість")
                     .font(.caption)
@@ -155,10 +147,10 @@ struct PaymentSheet: View {
         .padding(Spacing.md)
         .background(Color.seansCardBackground)
         .clipShape(.rect(cornerRadius: CornerRadius.lg))
-        .overlay(
+        .overlay {
             RoundedRectangle(cornerRadius: CornerRadius.lg)
                 .stroke(Color.seansPrimary.opacity(0.2), lineWidth: 1)
-        )
+        }
     }
 
     private var creditToggleRow: some View {
@@ -350,14 +342,11 @@ struct PaymentSheet: View {
         }
     }
 
-    // MARK: - Actions
-
     private func confirmWithCreditOnly() {
-        // Create a "credit-only" payment record
         let creditPayment = Payment(
             invoiceId: "credit_\(UUID().uuidString.prefix(8))",
             bookingReference: UUID().uuidString,
-            amount: 0,  // No money paid
+            amount: 0,
             pageUrl: "",
             status: .success,
             createdAt: .now,
@@ -374,7 +363,7 @@ struct PaymentSheet: View {
                     for: slot,
                     date: date,
                     clientName: clientName,
-                    sessionPriceUAH: amountToPayUAH  // Only pay the remaining amount
+                    sessionPriceUAH: amountToPayUAH
                 )
                 payment = newPayment
                 HapticService.notification(.success)
@@ -405,7 +394,6 @@ struct PaymentSheet: View {
 
     #if DEBUG
     private func skipPayment() {
-        // Create a fake successful payment for quick testing
         let fakePayment = Payment(
             invoiceId: "debug_\(UUID().uuidString.prefix(8))",
             bookingReference: UUID().uuidString,
@@ -485,7 +473,7 @@ struct PaymentSheet: View {
         priceUAH: 1500,
         clientId: "user-1",
         clientName: "Test User",
-        userCredit: 100000, // 1000 UAH
+        userCredit: 100000,
         onComplete: { _, _ in },
         onCancel: {}
     )
@@ -505,7 +493,7 @@ struct PaymentSheet: View {
         priceUAH: 1500,
         clientId: "user-1",
         clientName: "Test User",
-        userCredit: 200000, // 2000 UAH - more than needed
+        userCredit: 200000,
         onComplete: { _, _ in },
         onCancel: {}
     )

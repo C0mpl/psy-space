@@ -2,7 +2,7 @@
 //  Booking.swift
 //  Seans
 //
-//  Created by Claude on 24.08.2026.
+//  Created by Ilias Mirzoiev on 24.08.2026.
 //
 
 import FirebaseFirestore
@@ -12,35 +12,31 @@ struct Booking: Identifiable, Codable, Equatable, Sendable {
     @DocumentID var id: String?
     let clientId: String
     let clientName: String
+    let clientEmail: String?
     var date: Date
     var startTime: Date
     var endTime: Date
     var status: BookingStatus
     let createdAt: Date
 
-    // Cancellation
     var cancelledAt: Date?
     var cancelledBy: CancelledBy?
     var cancellationReason: String?
-    var creditGivenOnCancel: Bool?  // true if cancelled 24h+ before, credit saved
+    var creditGivenOnCancel: Bool?
 
-    // Reschedule (confirmed)
     var rescheduledAt: Date?
     var rescheduledBy: CancelledBy?
     var previousStartTime: Date?
 
-    // Reschedule request (pending approval)
     var rescheduleRequest: RescheduleRequest?
 
-    // Payment
     var paymentId: String?
     var paymentStatus: PaymentStatus?
     var paidAmount: Int?
-    var usedCreditAmount: Int?  // Credit used from previous cancellation
+    var usedCreditAmount: Int?
 
-    // Refund
     var refundedAt: Date?
-    var refundedAmount: Int?  // Amount refunded in kopiykas
+    var refundedAmount: Int?
 
     var bookingId: String { id ?? UUID().uuidString }
 
@@ -52,12 +48,10 @@ struct Booking: Identifiable, Codable, Equatable, Sendable {
         rescheduleRequest != nil
     }
 
-    /// Hours until session starts (negative if in the past)
     var hoursUntilSession: Double {
         startTime.timeIntervalSince(.now) / 3600
     }
 
-    /// Whether cancellation qualifies for credit (24+ hours before)
     var canCancelWithCredit: Bool {
         hoursUntilSession >= 24
     }
@@ -66,6 +60,7 @@ struct Booking: Identifiable, Codable, Equatable, Sendable {
         id: String? = nil,
         clientId: String,
         clientName: String,
+        clientEmail: String? = nil,
         date: Date,
         startTime: Date,
         endTime: Date,
@@ -89,6 +84,7 @@ struct Booking: Identifiable, Codable, Equatable, Sendable {
         self.id = id ?? UUID().uuidString
         self.clientId = clientId
         self.clientName = clientName
+        self.clientEmail = clientEmail
         self.date = date
         self.startTime = startTime
         self.endTime = endTime
@@ -118,8 +114,6 @@ struct Booking: Identifiable, Codable, Equatable, Sendable {
         "\(startTime.formatted(date: .omitted, time: .shortened)) - \(endTime.formatted(date: .omitted, time: .shortened))"
     }
 }
-
-// MARK: - Reschedule Request
 
 struct RescheduleRequest: Codable, Equatable, Sendable {
     let requestedBy: CancelledBy

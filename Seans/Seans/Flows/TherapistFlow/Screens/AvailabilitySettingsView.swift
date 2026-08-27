@@ -2,7 +2,7 @@
 //  AvailabilitySettingsView.swift
 //  Seans
 //
-//  Created by Claude on 24.08.2026.
+//  Created by Ilias Mirzoiev on 24.08.2026.
 //
 
 import SwiftUI
@@ -31,8 +31,6 @@ struct AvailabilitySettingsView: View {
             }
         }
     }
-
-    // MARK: - Sections
 
     private var generalSection: some View {
         Section("Загальні") {
@@ -101,8 +99,6 @@ struct AvailabilitySettingsView: View {
     }
 }
 
-// MARK: - Day Schedule Row
-
 private struct DayScheduleRow: View {
     let day: Weekday
     @Binding var schedule: DaySchedule?
@@ -129,7 +125,6 @@ private struct DayScheduleRow: View {
                 ))
 
                 if isEnabled {
-                    // Time windows
                     ForEach(Array(timeWindows.enumerated()), id: \.element.id) { index, window in
                         TimeWindowRow(
                             window: window,
@@ -148,7 +143,6 @@ private struct DayScheduleRow: View {
                         }
                     }
 
-                    // Add window button
                     Button {
                         addWindow()
                     } label: {
@@ -208,8 +202,6 @@ private struct DayScheduleRow: View {
         }
     }
 
-    // MARK: - Actions
-
     private func updateWindow(at index: Int, with window: TimeWindow) {
         guard var current = schedule else { return }
         guard index < current.timeWindows.count else { return }
@@ -227,7 +219,6 @@ private struct DayScheduleRow: View {
     private func addWindow() {
         guard var current = schedule else { return }
 
-        // Calculate a reasonable default for new window
         let lastWindow = current.timeWindows.last
         let newStartHour = (lastWindow?.endTime.hour ?? 12) + 1
         let newEndHour = min(newStartHour + 4, 22)
@@ -246,8 +237,6 @@ private struct DayScheduleRow: View {
         schedule = current
     }
 }
-
-// MARK: - Time Window Row
 
 private struct TimeWindowRow: View {
     let window: TimeWindow
@@ -339,8 +328,6 @@ private struct TimeWindowRow: View {
         .padding(.vertical, Spacing.xs)
     }
 }
-
-// MARK: - Time Picker
 
 private struct TimePicker: View {
     @Binding var hour: Int

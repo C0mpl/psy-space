@@ -2,7 +2,7 @@
 //  Stage.swift
 //  Seans
 //
-//  Created by Claude on 23.08.2026.
+//  Created by Ilias Mirzoiev on 23.08.2026.
 //
 
 import SwiftUI
@@ -68,16 +68,21 @@ struct Stage: View {
         #endif
 
         if user.isTherapist {
-            // Therapist sees all bookings
             bookingRepo.startListening()
         } else {
-            // Client sees only their bookings
             bookingRepo.startListening(forClientId: user.id)
         }
 
-        // Save FCM token for push notifications
         Task {
+            _ = await PushNotificationService.shared.requestPermission()
             await PushNotificationService.shared.saveToken(for: user.id)
+
+            if user.isTherapist && !user.calendarSyncEnabled {
+                let granted = await CalendarService.shared.requestAccess()
+                if granted {
+                    await userRepo.setCalendarSyncEnabled(true)
+                }
+            }
         }
     }
 
@@ -91,14 +96,11 @@ struct Stage: View {
     }
 
     private func handleOpenURL(_ url: URL) {
-        // Handle payment callbacks (seans://payment-callback?reference=...)
         if url.scheme == "seans" && url.host == "payment-callback" {
             paymentRepo.handlePaymentCallback(url: url)
         }
     }
 }
-
-// MARK: - Cancellation Alert
 
 private struct CancellationAlert: View {
     let notification: CancellationNotification
@@ -109,6 +111,8 @@ private struct CancellationAlert: View {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture { onDismiss() }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel("Закрити сповіщення")
 
             VStack(spacing: Spacing.md) {
                 Image(systemName: "calendar.badge.exclamationmark")

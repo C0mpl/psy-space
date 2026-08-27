@@ -2,7 +2,7 @@
 //  PaymentSettingsView.swift
 //  Seans
 //
-//  Created by Claude on 25.08.2026.
+//  Created by Ilias Mirzoiev on 25.08.2026.
 //
 
 import SwiftUI
@@ -112,8 +112,6 @@ struct PaymentSettingsView: View {
         }
     }
 
-    // MARK: - Rows
-
     private var testModeRow: some View {
         Toggle(isOn: $isTestMode) {
             HStack(spacing: Spacing.sm) {
@@ -187,8 +185,6 @@ struct PaymentSettingsView: View {
             .textInputAutocapitalization(.never)
             .keyboardType(.URL)
     }
-
-    // MARK: - Actions
 
     private func loadSettings() async {
         isTestMode = await remoteConfig.isTestMode

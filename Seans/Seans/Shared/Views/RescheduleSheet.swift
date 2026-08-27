@@ -2,7 +2,7 @@
 //  RescheduleSheet.swift
 //  Seans
 //
-//  Created by Claude on 25.08.2026.
+//  Created by Ilias Mirzoiev on 25.08.2026.
 //
 
 import SwiftUI
@@ -77,21 +77,17 @@ struct RescheduleSheet: View {
         }
     }
 
-    // MARK: - Computed
-
     private var selectedWeekday: Int {
         Calendar.current.component(.weekday, from: selectedDate)
     }
 
     private var availableSlots: [TimeSlot] {
         let existingBookings = bookingRepo.bookings(for: selectedDate)
-            .filter { $0.id != booking.id } // Exclude current booking
+            .filter { $0.id != booking.id }
         return availabilityRepo.generateTimeSlots(for: selectedDate, existingBookings: existingBookings)
             .filter { slot in
-                // Exclude booked slots and past slots
                 guard !slot.isBooked && slot.startTime > .now else { return false }
 
-                // Exclude the current booking's slot if same date
                 if Calendar.current.isDate(selectedDate, inSameDayAs: booking.date) {
                     let bookingHour = Calendar.current.component(.hour, from: booking.startTime)
                     let bookingMinute = Calendar.current.component(.minute, from: booking.startTime)
@@ -106,8 +102,6 @@ struct RescheduleSheet: View {
                 return true
             }
     }
-
-    // MARK: - Views
 
     private var currentBookingCard: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -216,8 +210,6 @@ struct RescheduleSheet: View {
         }
         .padding(.vertical, Spacing.xl)
     }
-
-    // MARK: - Actions
 
     private func reschedule(to slot: TimeSlot) {
         isLoading = true
