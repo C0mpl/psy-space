@@ -10,6 +10,7 @@ import SwiftUI
 struct ClientProfileTab: View {
     @Environment(UserRepository.self) private var userRepo
     @Environment(BookingRepository.self) private var bookingRepo
+    @Environment(JournalPreferences.self) private var journalPreferences
 
     var body: some View {
         NavigationStack {
@@ -17,6 +18,8 @@ struct ClientProfileTab: View {
                 if let user = userRepo.currentUser {
                     profileHeader(for: user)
                 }
+
+                journalSection
 
                 Section {
                     NavigationLink {
@@ -87,6 +90,61 @@ struct ClientProfileTab: View {
         }
     }
 
+    @ViewBuilder
+    private var journalSection: some View {
+        @Bindable var prefs = journalPreferences
+
+        Section {
+            if BiometricService.shared.isBiometricAvailable {
+                Toggle(isOn: $prefs.isBiometricLockEnabled) {
+                    Label {
+                        VStack(alignment: .leading, spacing: Spacing.xxs) {
+                            Text("Захист щоденника")
+                            Text("Використовувати \(BiometricService.shared.biometricName)")
+                                .font(.caption)
+                                .foregroundStyle(Color.seansTextSecondary)
+                        }
+                    } icon: {
+                        Image(systemName: BiometricService.shared.biometricIcon)
+                    }
+                }
+                .tint(Color.seansSecondary)
+
+                if journalPreferences.isBiometricLockEnabled {
+                    Toggle(isOn: $prefs.autoLockOnBackground) {
+                        Label {
+                            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                                Text("Автоблокування")
+                                Text("Блокувати при згортанні")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.seansTextSecondary)
+                            }
+                        } icon: {
+                            Image(systemName: "lock.rotation")
+                        }
+                    }
+                    .tint(Color.seansSecondary)
+                }
+            }
+
+            Toggle(isOn: $prefs.defaultShareWithTherapist) {
+                Label {
+                    VStack(alignment: .leading, spacing: Spacing.xxs) {
+                        Text("Ділитися за замовчуванням")
+                        Text("Нові записи будуть видимі терапевту")
+                            .font(.caption)
+                            .foregroundStyle(Color.seansTextSecondary)
+                    }
+                } icon: {
+                    Image(systemName: "person.2")
+                }
+            }
+            .tint(Color.seansSecondary)
+        } header: {
+            Text("Щоденник")
+        }
+    }
+
     private func signOut() {
         userRepo.signOut()
     }
@@ -96,4 +154,5 @@ struct ClientProfileTab: View {
     ClientProfileTab()
         .environment(UserRepository())
         .environment(BookingRepository())
+        .environment(JournalPreferences())
 }

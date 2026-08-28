@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		E6E06C03303C900200447831 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C02303C900200447831 /* FirebaseAuth */; };
 		E6E06C05303C900200447831 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C04303C900200447831 /* FirebaseFirestore */; };
+		E6E06C07303C900200447831 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C06303C900200447831 /* FirebaseStorage */; };
 		E6E06C0A303C959700447831 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C09303C959700447831 /* GoogleSignIn */; };
 		E6E06C0C303C959700447831 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C0B303C959700447831 /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
@@ -74,6 +75,7 @@
 			files = (
 				E6E06C03303C900200447831 /* FirebaseAuth in Frameworks */,
 				E6E06C05303C900200447831 /* FirebaseFirestore in Frameworks */,
+				E6E06C07303C900200447831 /* FirebaseStorage in Frameworks */,
 				E6E06C0A303C959700447831 /* GoogleSignIn in Frameworks */,
 				E6E06C0C303C959700447831 /* GoogleSignInSwift in Frameworks */,
 			);
@@ -438,7 +440,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -472,7 +474,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -644,6 +646,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E6E06C01303C900200447831 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		E6E06C06303C900200447831 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6E06C01303C900200447831 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
 		};
 		E6E06C09303C959700447831 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;

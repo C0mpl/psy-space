@@ -8,7 +8,7 @@
 import FirebaseFirestore
 import Foundation
 
-struct Booking: Identifiable, Codable, Equatable, Sendable {
+struct Booking: Identifiable, Codable, Equatable, Hashable, Sendable {
     @DocumentID var id: String?
     let clientId: String
     let clientName: String
@@ -115,7 +115,7 @@ struct Booking: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
-struct RescheduleRequest: Codable, Equatable, Sendable {
+struct RescheduleRequest: Codable, Equatable, Hashable, Sendable {
     let requestedBy: CancelledBy
     let requestedAt: Date
     let newDate: Date

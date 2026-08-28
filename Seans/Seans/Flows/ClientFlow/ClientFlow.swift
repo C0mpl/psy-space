@@ -9,7 +9,11 @@ import SwiftUI
 
 struct ClientFlow: View {
     @Environment(UserRepository.self) private var userRepo
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var selectedTab: ClientTab = .booking
+    @State private var journalRepo = JournalRepository()
+    @State private var journalPreferences = JournalPreferences()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -25,10 +29,23 @@ struct ClientFlow: View {
                 ClientProfileTab()
             }
         }
+        .environment(journalRepo)
+        .environment(journalPreferences)
+        .onChange(of: selectedTab) { oldValue, newValue in
+            if oldValue == .journal && newValue != .journal {
+                journalPreferences.lockIfNeeded()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background || newPhase == .inactive {
+                journalPreferences.lockIfNeeded()
+            }
+        }
     }
 }
 
 #Preview {
     ClientFlow()
         .environment(UserRepository())
+        .environment(BookingRepository())
 }

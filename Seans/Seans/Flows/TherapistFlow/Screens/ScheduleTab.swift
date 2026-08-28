@@ -189,21 +189,17 @@ private struct BookingRow: View {
 
                 if !hasPendingReschedule {
                     HStack(spacing: Spacing.sm) {
-                        Button(action: onReschedule) {
-                            Image(systemName: "calendar.badge.clock")
-                                .font(.title3)
-                                .foregroundStyle(Color.seansPrimary)
-                        }
-                        .buttonStyle(SeansIconButtonStyle())
-                        .accessibilityLabel("Перенести сеанс")
+                        Button("Перенести сеанс", systemImage: "calendar.badge.clock", action: onReschedule)
+                            .labelStyle(.iconOnly)
+                            .font(.title3)
+                            .foregroundStyle(Color.seansPrimary)
+                            .buttonStyle(SeansIconButtonStyle())
 
-                        Button(role: .destructive, action: onCancel) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title3)
-                                .foregroundStyle(Color.seansError)
-                        }
-                        .buttonStyle(SeansIconButtonStyle())
-                        .accessibilityLabel("Скасувати сеанс")
+                        Button("Скасувати сеанс", systemImage: "xmark.circle.fill", role: .destructive, action: onCancel)
+                            .labelStyle(.iconOnly)
+                            .font(.title3)
+                            .foregroundStyle(Color.seansError)
+                            .buttonStyle(SeansIconButtonStyle())
                     }
                 }
             }

@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Seans використовує Face ID для захисту вашого особистого щоденника.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Seans потребує доступ до мікрофона для запису голосових повідомлень у щоденнику.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Seans хоче додавати ваші сеанси терапії до Apple Calendar для зручного нагадування.</string>
 	<key>CFBundleURLTypes</key>
