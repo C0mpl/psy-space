@@ -14,11 +14,16 @@ struct ClientFlow: View {
     @State private var selectedTab: ClientTab = .booking
     @State private var journalRepo = JournalRepository()
     @State private var journalPreferences = JournalPreferences()
+    @State private var homeworkRepo = HomeworkRepository()
 
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Запис", systemImage: "calendar", value: ClientTab.booking) {
                 BookingTab()
+            }
+
+            Tab("Завдання", systemImage: "doc.text.fill", value: ClientTab.homework) {
+                HomeworkTab()
             }
 
             Tab("Щоденник", systemImage: "book.closed", value: ClientTab.journal) {
@@ -31,6 +36,7 @@ struct ClientFlow: View {
         }
         .environment(journalRepo)
         .environment(journalPreferences)
+        .environment(homeworkRepo)
         .onChange(of: selectedTab) { oldValue, newValue in
             if oldValue == .journal && newValue != .journal {
                 journalPreferences.lockIfNeeded()

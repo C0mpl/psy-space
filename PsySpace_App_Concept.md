@@ -25,6 +25,7 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 | **Mood & Emotion Tracker** | Daily emotional state check-in using a 5-level scale with emoji representation. | ✅ Implemented |
 | **Contextual Note Sharing** | Option to mark journal entries as shared for therapist review before sessions. | ✅ Implemented |
 | **Privacy & Security** | Biometric lock (Face ID / Touch ID) + option to mark notes as strictly private. | ✅ Implemented |
+| **Homework Assignments** | View and complete therapist-assigned homework, add responses, and control sharing with therapist. | ✅ Implemented |
 
 ### 2.2. Therapist Features (Same App, Elevated Role)
 
@@ -35,9 +36,9 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 | **Dashboard Stats** | View today's session count, upcoming sessions, and weekly schedule overview. | ✅ Implemented |
 | **Calendar Sync** | Server-side Google Calendar sync with Meet links; toggle in settings. | ✅ Implemented |
 | **Client Management** | View client list, session history, and shared journal entries. | ✅ Implemented |
-| **Session Notes & Anamnesis** | Record session notes, hypotheses, and treatment observations per client. | 🔲 Pending |
+| **Session Notes & Anamnesis** | Record session notes, hypotheses, and treatment observations per client. | ✅ Implemented |
 | **Cancellation Policies** | Configurable cancellation windows (e.g., free up to 24h; partial/full retention after). | ✅ Implemented |
-| **Homework & Materials** | Assign exercises (CBT worksheets, reading materials) to clients. | 🔲 Pending |
+| **Homework & Materials** | Assign exercises with text instructions and PDF/link attachments. Clients can respond, mark as completed, and control sharing. | ✅ Implemented |
 
 ---
 
@@ -170,7 +171,11 @@ Seans/
 │   │   ├── Availability.swift  # WeeklySchedule, DaySchedule, TimeSlot, etc.
 │   │   ├── Booking.swift       # Booking model with Firestore @DocumentID
 │   │   ├── JournalEntry.swift  # Journal entry with mood tracking
-│   │   └── Payment.swift       # Payment model with status tracking
+│   │   ├── Payment.swift       # Payment model with status tracking
+│   │   ├── SessionNote.swift   # Therapist session notes with hypotheses/observations
+│   │   ├── ClientAnamnesis.swift  # Client history (background, issues, goals)
+│   │   ├── Homework.swift      # Homework assignments with attachments
+│   │   └── HomeworkResponse.swift  # Client responses to homework
 │   │
 │   ├── Data/
 │   │   ├── AuthService.swift       # Google Sign-In via Firebase Auth + Calendar OAuth
@@ -182,6 +187,11 @@ Seans/
 │   │   ├── JournalStorage.swift          # Local journal caching
 │   │   ├── JournalPreferences.swift      # Privacy/biometric settings
 │   │   ├── PaymentRepository.swift       # Monobank payment orchestration
+│   │   ├── SessionNoteRepository.swift   # Session notes with Firestore sync
+│   │   ├── SessionNoteStorage.swift      # Local session note caching
+│   │   ├── HomeworkRepository.swift      # Homework with Firestore sync
+│   │   ├── HomeworkStorage.swift         # Local homework caching
+│   │   ├── StorageService.swift          # Firebase Cloud Storage for attachments
 │   │   └── UserStorage.swift       # SwiftData local persistence
 │   │
 │   ├── Services/
@@ -210,6 +220,10 @@ Seans/
 │   │       ├── Journal/
 │   │       │   ├── JournalEntryEditor.swift  # Create/edit entries
 │   │       │   └── JournalEntryCard.swift    # Entry display component
+│   │       ├── Homework/
+│   │       │   ├── HomeworkTab.swift         # Homework list view
+│   │       │   ├── ClientHomeworkCard.swift  # Homework display card
+│   │       │   └── ClientHomeworkDetailSheet.swift  # View & respond to homework
 │   │       └── ClientProfileTab.swift  # User profile + settings
 │   │
 │   ├── TherapistFlow/
@@ -220,7 +234,17 @@ Seans/
 │   │       ├── ClientsTab.swift            # Client list with session counts
 │   │       ├── ClientDetail/
 │   │       │   ├── ClientDetailScreen.swift    # Client profile + history
-│   │       │   └── ClientJournalSection.swift  # Shared journal entries
+│   │       │   ├── ClientJournalSection.swift  # Shared journal entries
+│   │       │   ├── ClientSessionNotesSection.swift  # Session notes list
+│   │       │   ├── ClientAnamnesisSection.swift     # Client anamnesis display
+│   │       │   ├── SessionNoteEditor.swift     # Rich-text session note editor
+│   │       │   ├── SessionNoteCard.swift       # Session note display card
+│   │       │   ├── AnamnesisEditor.swift       # Rich-text anamnesis editor
+│   │       │   ├── ClientHomeworkSection.swift # Homework assignments section
+│   │       │   ├── HomeworkCard.swift          # Homework display card
+│   │       │   ├── HomeworkEditor.swift        # Create/edit homework
+│   │       │   └── HomeworkDetailSheet.swift   # View homework + responses
+│   │       ├── PaymentSettingsView.swift   # Monobank token & pricing config
 │   │       └── TherapistProfileTab.swift   # Therapist profile + settings
 │   │
 │   └── Shared/
@@ -347,16 +371,20 @@ Mental health data requires careful handling:
 - [x] Firebase Cloud Storage for audio files
 - [x] Local caching with UserDefaults
 
-### 🟡 Phase 6: Therapist Tools (In Progress)
+### ✅ Phase 6: Therapist Tools (Complete)
 - [x] Client list & profile view
 - [x] View shared journal entries
-- [ ] Session notes per client (therapist's private notes)
-- [ ] Homework assignment feature
+- [x] Session notes per client (therapist's private notes)
+- [x] Client anamnesis (background, presenting issues, goals)
+- [x] Homework assignment feature (with attachments, responses, sharing)
 
 ### 🔲 Phase 7: Polish & Launch (Pending)
 - [ ] iPad layout optimization
 - [x] Push notifications (FCM for cancellations/reschedules)
-- [ ] Settings screens (payment, notifications, privacy)
+- [x] Payment settings screen
+- [x] Calendar settings screen
+- [ ] Notifications settings screen (stub exists)
+- [ ] Privacy settings screen
 - [ ] Testing & bug fixes
 - [ ] TestFlight beta release
 
@@ -399,4 +427,8 @@ Before running the app, configure:
    - `bookings` (confirmed bookings with status tracking)
    - `pendingBookings` (unpaid booking holds)
    - `journalEntries` (client journal entries with sharing flags)
+   - `sessionNotes` (therapist session notes per client)
+   - `clientAnamnesis` (client background and treatment goals)
+   - `homework` (therapist homework assignments with attachments)
+   - `homeworkResponses` (client responses with completion and sharing flags)
    - `config/therapist` (calendar OAuth tokens)

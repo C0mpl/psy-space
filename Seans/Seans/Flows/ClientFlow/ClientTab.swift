@@ -9,6 +9,7 @@ import Foundation
 
 enum ClientTab {
     case booking
+    case homework
     case journal
     case profile
 }

@@ -18,6 +18,8 @@ struct ClientDetailScreen: View {
 
                 ClientAnamnesisSection(clientId: clientId, clientName: clientName)
 
+                ClientHomeworkSection(clientId: clientId)
+
                 ClientSessionNotesSection(clientId: clientId, clientName: clientName)
 
                 ClientJournalSection(clientId: clientId, clientName: clientName)
