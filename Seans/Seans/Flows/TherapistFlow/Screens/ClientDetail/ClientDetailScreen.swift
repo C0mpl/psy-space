@@ -16,6 +16,10 @@ struct ClientDetailScreen: View {
             VStack(spacing: Spacing.lg) {
                 clientHeader
 
+                ClientAnamnesisSection(clientId: clientId, clientName: clientName)
+
+                ClientSessionNotesSection(clientId: clientId, clientName: clientName)
+
                 ClientJournalSection(clientId: clientId, clientName: clientName)
             }
             .padding()
@@ -25,7 +29,7 @@ struct ClientDetailScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             #if DEBUG
-            print("👤 ClientDetailScreen appeared for clientId: \(clientId), name: \(clientName)")
+            print("ClientDetailScreen appeared for clientId: \(clientId), name: \(clientName)")
             #endif
         }
     }

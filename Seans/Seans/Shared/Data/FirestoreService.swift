@@ -425,4 +425,106 @@ final class FirestoreService: @unchecked Sendable {
                 onChange(entries)
             }
     }
+
+    // MARK: - Session Notes
+
+    private var sessionNotesCollection: CollectionReference {
+        db.collection("sessionNotes")
+    }
+
+    func createSessionNote(_ note: SessionNote) async throws {
+        try sessionNotesCollection.document(note.noteId).setData(from: note)
+        #if DEBUG
+        print("Session note created: \(note.noteId)")
+        #endif
+    }
+
+    func updateSessionNote(_ note: SessionNote) async throws {
+        try sessionNotesCollection.document(note.noteId).setData(from: note)
+        #if DEBUG
+        print("Session note updated: \(note.noteId)")
+        #endif
+    }
+
+    func deleteSessionNote(_ noteId: String) async throws {
+        try await sessionNotesCollection.document(noteId).delete()
+        #if DEBUG
+        print("Session note deleted: \(noteId)")
+        #endif
+    }
+
+    func fetchSessionNotes(forClientId clientId: String) async throws -> [SessionNote] {
+        let snapshot = try await sessionNotesCollection
+            .whereField("clientId", isEqualTo: clientId)
+            .order(by: "createdAt", descending: true)
+            .getDocuments()
+
+        return snapshot.documents.compactMap { doc in
+            try? doc.data(as: SessionNote.self)
+        }
+    }
+
+    func listenToSessionNotes(
+        forClientId clientId: String,
+        onChange: @escaping ([SessionNote]) -> Void
+    ) -> ListenerRegistration {
+        sessionNotesCollection
+            .whereField("clientId", isEqualTo: clientId)
+            .order(by: "createdAt", descending: true)
+            .addSnapshotListener { snapshot, error in
+                #if DEBUG
+                if let error {
+                    print("FirestoreService: Session notes listener error: \(error)")
+                    return
+                }
+                print("FirestoreService: Session notes received \(snapshot?.documents.count ?? 0) notes")
+                #endif
+                guard let documents = snapshot?.documents else { return }
+                let notes = documents.compactMap { doc in
+                    try? doc.data(as: SessionNote.self)
+                }
+                onChange(notes)
+            }
+    }
+
+    // MARK: - Client Anamnesis
+
+    private var anamnesisCollection: CollectionReference {
+        db.collection("clientAnamnesis")
+    }
+
+    func saveAnamnesis(_ anamnesis: ClientAnamnesis) async throws {
+        try anamnesisCollection.document(anamnesis.clientId).setData(from: anamnesis)
+        #if DEBUG
+        print("Anamnesis saved for client: \(anamnesis.clientId)")
+        #endif
+    }
+
+    func fetchAnamnesis(forClientId clientId: String) async throws -> ClientAnamnesis? {
+        let doc = try await anamnesisCollection.document(clientId).getDocument()
+        return try? doc.data(as: ClientAnamnesis.self)
+    }
+
+    func listenToAnamnesis(
+        forClientId clientId: String,
+        onChange: @escaping (ClientAnamnesis?) -> Void
+    ) -> ListenerRegistration {
+        anamnesisCollection.document(clientId).addSnapshotListener { snapshot, error in
+            #if DEBUG
+            if let error {
+                print("FirestoreService: Anamnesis listener error: \(error)")
+                return
+            }
+            #endif
+            guard let snapshot, snapshot.exists else {
+                onChange(nil)
+                return
+            }
+            let anamnesis = try? snapshot.data(as: ClientAnamnesis.self)
+            #if DEBUG
+            print("FirestoreService: Anamnesis received for client: \(clientId)")
+            #endif
+            onChange(anamnesis)
+        }
+    }
 }

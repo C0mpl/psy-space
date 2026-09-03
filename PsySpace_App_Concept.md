@@ -21,10 +21,10 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 | **Google Sign-In** | Secure authentication via Google account. | ✅ Implemented |
 | **Monobank Payment Integration** | Integrated payment flow using Monobank API (invoices, Apple Pay/Google Pay via MonoPay, webhooks). | ✅ Implemented |
 | **Calendar Sync** | Booked sessions sync to Google Calendar with Meet links; clients receive email invites. | ✅ Implemented |
-| **Therapeutic Journal & Notes** | Private rich-text diary for thoughts, breakthroughs, and session prep notes. | 🔲 Pending |
-| **Mood & Emotion Tracker** | Daily emotional state check-in using a structured scale (e.g., Plutchik's Wheel of Emotions). | 🔲 Pending |
-| **Contextual Note Sharing** | Option to attach specific journal entries to an upcoming session for therapist review. | 🔲 Pending |
-| **Privacy & Security** | Biometric lock (Face ID / Touch ID / PIN) + option to mark notes as strictly private. | 🔲 Pending |
+| **Therapeutic Journal & Notes** | Private rich-text diary for thoughts, breakthroughs, and session prep notes. Voice message support. | ✅ Implemented |
+| **Mood & Emotion Tracker** | Daily emotional state check-in using a 5-level scale with emoji representation. | ✅ Implemented |
+| **Contextual Note Sharing** | Option to mark journal entries as shared for therapist review before sessions. | ✅ Implemented |
+| **Privacy & Security** | Biometric lock (Face ID / Touch ID) + option to mark notes as strictly private. | ✅ Implemented |
 
 ### 2.2. Therapist Features (Same App, Elevated Role)
 
@@ -34,7 +34,7 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 | **Real-time Booking Sync** | All bookings sync instantly via Firebase Firestore between therapist and clients. | ✅ Implemented |
 | **Dashboard Stats** | View today's session count, upcoming sessions, and weekly schedule overview. | ✅ Implemented |
 | **Calendar Sync** | Server-side Google Calendar sync with Meet links; toggle in settings. | ✅ Implemented |
-| **Client Management** | View client profiles, session history, and shared notes. | 🔲 Pending |
+| **Client Management** | View client list, session history, and shared journal entries. | ✅ Implemented |
 | **Session Notes & Anamnesis** | Record session notes, hypotheses, and treatment observations per client. | 🔲 Pending |
 | **Cancellation Policies** | Configurable cancellation windows (e.g., free up to 24h; partial/full retention after). | ✅ Implemented |
 | **Homework & Materials** | Assign exercises (CBT worksheets, reading materials) to clients. | 🔲 Pending |
@@ -57,11 +57,14 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 * **Data Sync:** Firestore listeners for real-time updates between therapist and clients
 
 ### Third-Party Integrations
-* **Google Sign-In SDK:** OAuth 2.0 authentication flow
-* **Firebase Firestore:** Real-time NoSQL database
-* **Monobank API:** Invoice generation (`/merchant/invoice/create`), webhook handler for payment status. ✅
-* **Google Calendar:** Server-side integration via Cloud Functions with OAuth 2.0, auto-generates Google Meet links. ✅
-* **Push Notifications:** Firebase Cloud Messaging (FCM) for booking confirmations, cancellations, and reschedules. ✅
+* **Google Sign-In SDK:** OAuth 2.0 authentication flow ✅
+* **Firebase Firestore:** Real-time NoSQL database ✅
+* **Firebase Cloud Storage:** Audio file storage for voice messages ✅
+* **Monobank API:** Invoice generation, cancellation, refunds, webhook handler ✅
+* **Google Calendar:** Server-side integration via Cloud Functions with OAuth 2.0, auto-generates Google Meet links ✅
+* **Apple Calendar:** EventKit integration as fallback ✅
+* **Push Notifications:** Firebase Cloud Messaging (FCM) for booking confirmations, cancellations, and reschedules ✅
+* **LocalAuthentication:** Face ID / Touch ID for journal privacy ✅
 
 ---
 
@@ -165,7 +168,9 @@ Seans/
 │   ├── Domain/
 │   │   ├── User.swift          # User model with SwiftData persistence
 │   │   ├── Availability.swift  # WeeklySchedule, DaySchedule, TimeSlot, etc.
-│   │   └── Booking.swift       # Booking model with Firestore @DocumentID
+│   │   ├── Booking.swift       # Booking model with Firestore @DocumentID
+│   │   ├── JournalEntry.swift  # Journal entry with mood tracking
+│   │   └── Payment.swift       # Payment model with status tracking
 │   │
 │   ├── Data/
 │   │   ├── AuthService.swift       # Google Sign-In via Firebase Auth + Calendar OAuth
@@ -173,11 +178,20 @@ Seans/
 │   │   ├── FirestoreService.swift  # Firestore CRUD operations
 │   │   ├── AvailabilityRepository.swift  # Therapist availability with Firestore sync
 │   │   ├── BookingRepository.swift       # Bookings with Firestore sync
+│   │   ├── JournalRepository.swift       # Journal entries with Firestore sync
+│   │   ├── JournalStorage.swift          # Local journal caching
+│   │   ├── JournalPreferences.swift      # Privacy/biometric settings
+│   │   ├── PaymentRepository.swift       # Monobank payment orchestration
 │   │   └── UserStorage.swift       # SwiftData local persistence
 │   │
 │   ├── Services/
-│   │   ├── CalendarService.swift       # Calendar sync coordination
-│   │   └── PushNotificationService.swift  # FCM push notifications
+│   │   ├── CalendarService.swift         # Calendar sync coordination
+│   │   ├── GoogleCalendarService.swift   # Google Calendar API integration
+│   │   ├── AppleCalendarService.swift    # EventKit integration
+│   │   ├── MonobankService.swift         # Monobank API client
+│   │   ├── BiometricService.swift        # Face ID / Touch ID
+│   │   ├── AudioService.swift            # Voice message recording/playback
+│   │   └── PushNotificationService.swift # FCM push notifications
 │   │
 │   └── UI/
 │       └── Design.swift        # Color palette, Spacing, CornerRadius
@@ -190,8 +204,12 @@ Seans/
 │   ├── ClientFlow/
 │   │   ├── ClientFlow.swift    # Tab navigation for clients
 │   │   └── Screens/
-│   │       ├── BookingTab.swift    # Calendar + time slot selection
-│   │       ├── HistoryTab.swift    # Booking history
+│   │       ├── BookingTab.swift        # Calendar + time slot selection
+│   │       ├── HistoryTab.swift        # Booking history
+│   │       ├── JournalTab.swift        # Journal entries list
+│   │       ├── Journal/
+│   │       │   ├── JournalEntryEditor.swift  # Create/edit entries
+│   │       │   └── JournalEntryCard.swift    # Entry display component
 │   │       └── ClientProfileTab.swift  # User profile + settings
 │   │
 │   ├── TherapistFlow/
@@ -199,7 +217,10 @@ Seans/
 │   │   └── Screens/
 │   │       ├── ScheduleTab.swift           # Dashboard + stats + schedule
 │   │       ├── AvailabilitySettingsView.swift  # Configure working hours
-│   │       ├── ClientsTab.swift            # Client list (placeholder)
+│   │       ├── ClientsTab.swift            # Client list with session counts
+│   │       ├── ClientDetail/
+│   │       │   ├── ClientDetailScreen.swift    # Client profile + history
+│   │       │   └── ClientJournalSection.swift  # Shared journal entries
 │   │       └── TherapistProfileTab.swift   # Therapist profile + settings
 │   │
 │   └── Shared/
@@ -272,8 +293,8 @@ Mental health data requires careful handling:
 1. **Google Authentication:** Secure OAuth 2.0 flow via Firebase Auth.
 2. **Role-Based Access:** Email-based role assignment — only the configured therapist email gets elevated permissions.
 3. **Server-Side Security:** Firestore Security Rules restrict data access based on authenticated user.
-4. **Private vs. Shared Notes:** (Planned) Clients explicitly choose which journal entries to share with the therapist.
-5. **Biometric & PIN Protection:** (Planned) App locked behind Face ID / Touch ID / PIN.
+4. **Private vs. Shared Notes:** ✅ Clients explicitly choose which journal entries to share with the therapist.
+5. **Biometric Protection:** ✅ Journal locked behind Face ID / Touch ID via LocalAuthentication framework.
 6. **Data Deletion:** (Planned) Full data purge on account deletion request.
 
 ---
@@ -318,21 +339,24 @@ Mental health data requires careful handling:
 - [x] Email invites sent to both therapist and client
 - [x] Optional sync toggle for therapist in settings
 
-### 🔲 Phase 5: Client Journal (Pending)
-- [ ] Rich-text journal editor
-- [ ] Private / Shared note toggle
-- [ ] Biometric lock (Face ID / PIN)
-- [ ] Mood & emotion tracking
+### ✅ Phase 5: Client Journal (Complete)
+- [x] Rich-text journal editor with voice message support
+- [x] Private / Shared note toggle
+- [x] Biometric lock (Face ID / Touch ID)
+- [x] Mood & emotion tracking (5-level scale)
+- [x] Firebase Cloud Storage for audio files
+- [x] Local caching with UserDefaults
 
-### 🔲 Phase 6: Therapist Tools (Pending)
-- [ ] Client list & profile view
-- [ ] Session notes per client
-- [ ] View shared journal entries
+### 🟡 Phase 6: Therapist Tools (In Progress)
+- [x] Client list & profile view
+- [x] View shared journal entries
+- [ ] Session notes per client (therapist's private notes)
 - [ ] Homework assignment feature
 
 ### 🔲 Phase 7: Polish & Launch (Pending)
 - [ ] iPad layout optimization
-- [ ] Push notifications (APNs)
+- [x] Push notifications (FCM for cancellations/reschedules)
+- [ ] Settings screens (payment, notifications, privacy)
 - [ ] Testing & bug fixes
 - [ ] TestFlight beta release
 
@@ -370,8 +394,9 @@ Before running the app, configure:
      ```
 
 6. **Firestore Collections:**
-   - `users` (user profiles and settings)
+   - `users` (user profiles, credits, and settings)
    - `availability` (single document for therapist settings)
-   - `bookings` (confirmed bookings)
+   - `bookings` (confirmed bookings with status tracking)
    - `pendingBookings` (unpaid booking holds)
+   - `journalEntries` (client journal entries with sharing flags)
    - `config/therapist` (calendar OAuth tokens)
