@@ -35,10 +35,10 @@ struct ScheduleTab: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingSettings) {
+            .adaptiveSheet(isPresented: $showingSettings, detents: [.large]) {
                 AvailabilitySettingsView(repository: availabilityRepo)
             }
-            .sheet(item: $bookingToCancel) { booking in
+            .adaptiveSheet(item: $bookingToCancel, detents: [.medium, .large]) { booking in
                 CancelBookingSheet(
                     booking: booking,
                     reason: $cancellationReason,
@@ -49,7 +49,7 @@ struct ScheduleTab: View {
                     cancelBooking(booking, refund: refund)
                 }
             }
-            .sheet(item: $bookingToReschedule) { booking in
+            .adaptiveSheet(item: $bookingToReschedule, detents: [.large]) { booking in
                 RescheduleSheet(
                     booking: booking,
                     rescheduledBy: .therapist

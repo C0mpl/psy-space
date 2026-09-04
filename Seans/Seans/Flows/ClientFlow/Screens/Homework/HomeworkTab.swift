@@ -40,7 +40,7 @@ struct HomeworkTab: View {
             }
             .background(Color.seansBackground)
             .navigationTitle("Завдання")
-            .sheet(item: $selectedHomework) { homework in
+            .adaptiveSheet(item: $selectedHomework, detents: [.large]) { homework in
                 if let clientId {
                     ClientHomeworkDetailSheet(
                         homework: homework,
@@ -121,12 +121,14 @@ struct HomeworkTab: View {
                     .foregroundStyle(Color.seansTextSecondary)
             }
 
-            ForEach(pendingHomework) { homework in
-                ClientHomeworkCard(
-                    homework: homework,
-                    response: homeworkRepo.response(forHomeworkId: homework.homeworkId)
-                ) {
-                    selectedHomework = homework
+            LazyVGrid(columns: AdaptiveGridConfig.cards.columns, spacing: AdaptiveGridConfig.cards.spacing) {
+                ForEach(pendingHomework) { homework in
+                    ClientHomeworkCard(
+                        homework: homework,
+                        response: homeworkRepo.response(forHomeworkId: homework.homeworkId)
+                    ) {
+                        selectedHomework = homework
+                    }
                 }
             }
         }
@@ -146,12 +148,14 @@ struct HomeworkTab: View {
                     .foregroundStyle(Color.seansTextSecondary)
             }
 
-            ForEach(completedHomework) { homework in
-                ClientHomeworkCard(
-                    homework: homework,
-                    response: homeworkRepo.response(forHomeworkId: homework.homeworkId)
-                ) {
-                    selectedHomework = homework
+            LazyVGrid(columns: AdaptiveGridConfig.cards.columns, spacing: AdaptiveGridConfig.cards.spacing) {
+                ForEach(completedHomework) { homework in
+                    ClientHomeworkCard(
+                        homework: homework,
+                        response: homeworkRepo.response(forHomeworkId: homework.homeworkId)
+                    ) {
+                        selectedHomework = homework
+                    }
                 }
             }
         }

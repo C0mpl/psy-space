@@ -53,7 +53,7 @@ struct JournalTab: View {
                     }
                 }
             }
-            .sheet(item: $sheetPresentation) { presentation in
+            .adaptiveSheet(item: $sheetPresentation, detents: [.large]) { presentation in
                 if let clientId {
                     switch presentation {
                     case .newEntry:
@@ -174,7 +174,7 @@ struct JournalTab: View {
 
     private var entriesList: some View {
         ScrollView {
-            LazyVStack(spacing: Spacing.md) {
+            LazyVGrid(columns: AdaptiveGridConfig.journalEntries.columns, spacing: AdaptiveGridConfig.journalEntries.spacing) {
                 ForEach(journalRepo.entries) { entry in
                     JournalEntryCard(entry: entry) {
                         sheetPresentation = .editEntry(entry)

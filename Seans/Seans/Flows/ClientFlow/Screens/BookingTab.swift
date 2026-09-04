@@ -47,7 +47,7 @@ struct BookingTab: View {
             }
             .background(Color.seansBackground)
             .navigationTitle("Запис")
-            .sheet(isPresented: $showingPaymentSheet) {
+            .adaptiveSheet(isPresented: $showingPaymentSheet, detents: [.large]) {
                 if let slot = selectedSlot, let user = userRepo.currentUser {
                     PaymentSheet(
                         slot: slot,
@@ -73,7 +73,7 @@ struct BookingTab: View {
             } message: {
                 Text(errorMessage ?? "Не вдалося записатися на сеанс")
             }
-            .sheet(item: $bookingToCancel) { booking in
+            .adaptiveSheet(item: $bookingToCancel, detents: [.medium, .large]) { booking in
                 CancelBookingSheet(
                     booking: booking,
                     reason: $cancellationReason,
@@ -84,7 +84,7 @@ struct BookingTab: View {
                     cancelBooking(booking)
                 }
             }
-            .sheet(item: $bookingToReschedule) { booking in
+            .adaptiveSheet(item: $bookingToReschedule, detents: [.large]) { booking in
                 RescheduleSheet(
                     booking: booking,
                     rescheduledBy: .client
@@ -166,11 +166,7 @@ struct BookingTab: View {
                 .font(.headline)
                 .foregroundStyle(Color.seansTextPrimary)
 
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: Spacing.sm) {
+            LazyVGrid(columns: AdaptiveGridConfig.timeSlots.columns, spacing: AdaptiveGridConfig.timeSlots.spacing) {
                 ForEach(availableSlots) { slot in
                     Button {
                         withAnimation(reduceMotion ? nil : SeansAnimation.quick) {

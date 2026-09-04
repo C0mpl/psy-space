@@ -9,6 +9,9 @@ import SwiftUI
 
 struct ClientsTab: View {
     @Environment(BookingRepository.self) private var bookingRepo
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    @State private var selectedClient: ClientInfo?
 
     private var clients: [ClientInfo] {
         let allBookings = bookingRepo.bookings
@@ -53,6 +56,16 @@ struct ClientsTab: View {
     }
 
     var body: some View {
+        AdaptiveContainer {
+            compactLayout
+        } regular: {
+            regularLayout
+        }
+    }
+
+    // MARK: - iPhone Layout (NavigationStack)
+
+    private var compactLayout: some View {
         NavigationStack {
             Group {
                 if clients.isEmpty {
@@ -67,6 +80,52 @@ struct ClientsTab: View {
                 ClientDetailScreen(clientId: client.id, clientName: client.name)
             }
         }
+    }
+
+    // MARK: - iPad Layout (NavigationSplitView)
+
+    private var regularLayout: some View {
+        NavigationSplitView {
+            Group {
+                if clients.isEmpty {
+                    emptyState
+                } else {
+                    clientsListForSplit
+                }
+            }
+            .background(Color.seansBackground)
+            .navigationTitle("Клієнти")
+        } detail: {
+            if let client = selectedClient {
+                ClientDetailScreen(clientId: client.id, clientName: client.name)
+            } else {
+                noClientSelectedView
+            }
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+
+    private var clientsListForSplit: some View {
+        List(clients, selection: $selectedClient) { client in
+            ClientRow(client: client)
+                .tag(client)
+        }
+        .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+    }
+
+    private var noClientSelectedView: some View {
+        VStack(spacing: Spacing.md) {
+            Image(systemName: "person.crop.rectangle.stack")
+                .font(.system(size: 48))
+                .foregroundStyle(Color.seansTextSecondary)
+
+            Text("Оберіть клієнта")
+                .font(.title3)
+                .foregroundStyle(Color.seansTextSecondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.seansBackground)
     }
 
     private var emptyState: some View {

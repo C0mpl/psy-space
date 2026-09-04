@@ -63,7 +63,7 @@ struct TherapistProfileTab: View {
             .scrollContentBackground(.hidden)
             .background(Color.seansBackground)
             .navigationTitle("Профіль")
-            .sheet(isPresented: $showingPaymentSettings) {
+            .adaptiveSheet(isPresented: $showingPaymentSettings, detents: [.medium, .large]) {
                 PaymentSettingsView()
             }
         }
