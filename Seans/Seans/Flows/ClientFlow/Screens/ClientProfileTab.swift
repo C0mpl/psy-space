@@ -35,7 +35,7 @@ struct ClientProfileTab: View {
                     }
 
                     NavigationLink {
-                        Text("Конфіденційність")
+                        PrivacySettingsView()
                     } label: {
                         Label("Конфіденційність", systemImage: "lock.shield")
                     }
@@ -156,4 +156,5 @@ struct ClientProfileTab: View {
         .environment(BookingRepository())
         .environment(JournalPreferences())
         .environment(NotificationPreferences())
+        .environment(PrivacyPreferences())
 }

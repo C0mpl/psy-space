@@ -56,4 +56,5 @@ struct ClientFlow: View {
     ClientFlow()
         .environment(UserRepository())
         .environment(BookingRepository())
+        .environment(PrivacyPreferences())
 }

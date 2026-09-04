@@ -12,6 +12,7 @@
 		E6E06C07303C900200447831 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C06303C900200447831 /* FirebaseStorage */; };
 		E6E06C0A303C959700447831 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C09303C959700447831 /* GoogleSignIn */; };
 		E6E06C0C303C959700447831 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C0B303C959700447831 /* GoogleSignInSwift */; };
+		E6E06C0D303C900200447831 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C0E303C900200447831 /* FirebaseCrashlytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,6 +79,7 @@
 				E6E06C07303C900200447831 /* FirebaseStorage in Frameworks */,
 				E6E06C0A303C959700447831 /* GoogleSignIn in Frameworks */,
 				E6E06C0C303C959700447831 /* GoogleSignInSwift in Frameworks */,
+				E6E06C0D303C900200447831 /* FirebaseCrashlytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -142,6 +144,7 @@
 				E6E06C04303C900200447831 /* FirebaseFirestore */,
 				E6E06C09303C959700447831 /* GoogleSignIn */,
 				E6E06C0B303C959700447831 /* GoogleSignInSwift */,
+				E6E06C0E303C900200447831 /* FirebaseCrashlytics */,
 			);
 			productName = Seans;
 			productReference = E6E06B93303B4A0C00447831 /* Seans.app */;
@@ -661,6 +664,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E6E06C08303C959700447831 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		E6E06C0E303C900200447831 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6E06C01303C900200447831 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

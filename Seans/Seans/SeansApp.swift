@@ -6,11 +6,14 @@
 //
 
 import Firebase
+import FirebaseCrashlytics
 import GoogleSignIn
 import SwiftUI
 
 @main
 struct SeansApp: App {
+    @State private var privacyPreferences = PrivacyPreferences()
+
     init() {
         FirebaseApp.configure()
         PushNotificationService.shared.setup()
@@ -19,11 +22,13 @@ struct SeansApp: App {
     var body: some Scene {
         WindowGroup {
             Stage()
+                .environment(privacyPreferences)
                 .onOpenURL { url in
                     GIDSignIn.sharedInstance.handle(url)
                 }
                 .task {
                     await PushNotificationService.shared.requestPermission()
+                    CrashlyticsService.shared.configure(with: privacyPreferences)
                 }
         }
     }
