@@ -18,22 +18,10 @@ struct ClientFlow: View {
     @State private var notificationPrefs = NotificationPreferences()
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            Tab("Запис", systemImage: "calendar", value: ClientTab.booking) {
-                BookingTab()
-            }
-
-            Tab("Завдання", systemImage: "doc.text.fill", value: ClientTab.homework) {
-                HomeworkTab()
-            }
-
-            Tab("Щоденник", systemImage: "book.closed", value: ClientTab.journal) {
-                JournalTab()
-            }
-
-            Tab("Профіль", systemImage: "person.circle", value: ClientTab.profile) {
-                ClientProfileTab()
-            }
+        AdaptiveContainer {
+            compactLayout
+        } regular: {
+            regularLayout
         }
         .environment(journalRepo)
         .environment(journalPreferences)
@@ -48,6 +36,69 @@ struct ClientFlow: View {
             if newPhase == .background || newPhase == .inactive {
                 journalPreferences.lockIfNeeded()
             }
+        }
+    }
+
+    // MARK: - iPhone Layout (TabView)
+
+    private var compactLayout: some View {
+        TabView(selection: $selectedTab) {
+            Tab(ClientTab.booking.title, systemImage: ClientTab.booking.systemImage, value: ClientTab.booking) {
+                BookingTab()
+            }
+
+            Tab(ClientTab.homework.title, systemImage: ClientTab.homework.systemImage, value: ClientTab.homework) {
+                HomeworkTab()
+            }
+
+            Tab(ClientTab.journal.title, systemImage: ClientTab.journal.systemImage, value: ClientTab.journal) {
+                JournalTab()
+            }
+
+            Tab(ClientTab.profile.title, systemImage: ClientTab.profile.systemImage, value: ClientTab.profile) {
+                ClientProfileTab()
+            }
+        }
+    }
+
+    // MARK: - iPad Layout (NavigationSplitView)
+
+    private var regularLayout: some View {
+        NavigationSplitView {
+            sidebarContent
+        } detail: {
+            detailContent
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+
+    private var sidebarContent: some View {
+        List {
+            ForEach(ClientTab.allCases) { tab in
+                Button {
+                    selectedTab = tab
+                } label: {
+                    Label(tab.title, systemImage: tab.systemImage)
+                }
+                .listRowBackground(selectedTab == tab ? Color.seansPrimary.opacity(0.15) : Color.clear)
+                .foregroundStyle(selectedTab == tab ? Color.seansPrimary : Color.seansTextPrimary)
+            }
+        }
+        .navigationTitle("Seans")
+        .listStyle(.sidebar)
+    }
+
+    @ViewBuilder
+    private var detailContent: some View {
+        switch selectedTab {
+        case .booking:
+            BookingTab()
+        case .homework:
+            HomeworkTab()
+        case .journal:
+            JournalTab()
+        case .profile:
+            ClientProfileTab()
         }
     }
 }

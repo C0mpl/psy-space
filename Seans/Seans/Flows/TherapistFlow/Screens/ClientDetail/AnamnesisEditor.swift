@@ -37,6 +37,7 @@ struct AnamnesisEditor: View {
                 sectionPicker
                 editorContent
             }
+            .adaptiveReadableWidth()
             .background(Color.seansBackground)
             .navigationTitle(isEditing ? "Редагувати анамнез" : "Анамнез клієнта")
             .navigationBarTitleDisplayMode(.inline)

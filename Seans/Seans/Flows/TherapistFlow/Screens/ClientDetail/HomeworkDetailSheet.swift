@@ -30,6 +30,7 @@ struct HomeworkDetailSheet: View {
                     }
                 }
                 .padding()
+                .adaptiveReadableWidth()
             }
             .background(Color.seansBackground)
             .navigationTitle(homework.title)

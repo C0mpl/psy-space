@@ -42,6 +42,7 @@ struct ClientHomeworkDetailSheet: View {
                     sharingSection
                 }
                 .padding()
+                .adaptiveReadableWidth()
             }
             .background(Color.seansBackground)
             .navigationTitle(homework.title)

@@ -43,6 +43,7 @@ struct JournalEntryEditor: View {
                     sharingSection
                 }
                 .padding()
+                .adaptiveReadableWidth()
             }
             .background(Color.seansBackground)
             .navigationTitle(isEditing ? "Редагувати" : "Новий запис")

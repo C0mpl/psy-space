@@ -194,25 +194,6 @@ final class UserRepository {
     }
 
     #if DEBUG
-    func debugSwitchRole() {
-        guard let user = currentUser else { return }
-        let newUser = User(
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            isTherapist: !user.isTherapist,
-            createdAt: user.createdAt,
-            paymentCredit: user.paymentCredit,
-            calendarSyncEnabled: user.calendarSyncEnabled
-        )
-        storage?.saveUser(newUser)
-        currentUser = newUser
-
-        Task {
-            try? await firestore.saveUser(newUser)
-        }
-    }
-
     func debugEnsureUserExists() {
         guard let user = currentUser else { return }
         Task {

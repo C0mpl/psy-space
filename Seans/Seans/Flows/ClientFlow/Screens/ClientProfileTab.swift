@@ -44,14 +44,6 @@ struct ClientProfileTab: View {
                 Section {
                     Button("Вийти", role: .destructive, action: signOut)
                 }
-
-                #if DEBUG
-                Section("Debug") {
-                    Button("Перемкнути на терапевта") {
-                        userRepo.debugSwitchRole()
-                    }
-                }
-                #endif
             }
             .scrollContentBackground(.hidden)
             .background(Color.seansBackground)

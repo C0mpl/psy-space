@@ -37,6 +37,7 @@ struct SessionNoteEditor: View {
                 sectionPicker
                 editorContent
             }
+            .adaptiveReadableWidth()
             .background(Color.seansBackground)
             .navigationTitle(isEditing ? "Редагувати нотатку" : "Нова нотатка")
             .navigationBarTitleDisplayMode(.inline)

@@ -44,6 +44,7 @@ struct HomeworkEditor: View {
                     attachmentsSection
                 }
                 .padding()
+                .adaptiveReadableWidth()
             }
             .background(Color.seansBackground)
             .navigationTitle(isEditing ? "Редагувати завдання" : "Нове завдання")

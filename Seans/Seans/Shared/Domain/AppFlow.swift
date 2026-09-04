@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum AppFlow {
+enum AppFlow: Hashable {
     case auth
     case client
     case therapist
