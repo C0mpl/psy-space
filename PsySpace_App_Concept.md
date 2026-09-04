@@ -61,6 +61,7 @@ A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The
 * **Google Sign-In SDK:** OAuth 2.0 authentication flow ✅
 * **Firebase Firestore:** Real-time NoSQL database ✅
 * **Firebase Cloud Storage:** Audio file storage for voice messages ✅
+* **Firebase Crashlytics:** Crash reporting (user-toggleable for privacy) ✅
 * **Monobank API:** Invoice generation, cancellation, refunds, webhook handler ✅
 * **Google Calendar:** Server-side integration via Cloud Functions with OAuth 2.0, auto-generates Google Meet links ✅
 * **Apple Calendar:** EventKit integration as fallback ✅
@@ -186,6 +187,8 @@ Seans/
 │   │   ├── JournalRepository.swift       # Journal entries with Firestore sync
 │   │   ├── JournalStorage.swift          # Local journal caching
 │   │   ├── JournalPreferences.swift      # Privacy/biometric settings
+│   │   ├── NotificationPreferences.swift # Push notification settings
+│   │   ├── PrivacyPreferences.swift      # Crashlytics & privacy settings
 │   │   ├── PaymentRepository.swift       # Monobank payment orchestration
 │   │   ├── SessionNoteRepository.swift   # Session notes with Firestore sync
 │   │   ├── SessionNoteStorage.swift      # Local session note caching
@@ -201,10 +204,12 @@ Seans/
 │   │   ├── MonobankService.swift         # Monobank API client
 │   │   ├── BiometricService.swift        # Face ID / Touch ID
 │   │   ├── AudioService.swift            # Voice message recording/playback
-│   │   └── PushNotificationService.swift # FCM push notifications
+│   │   ├── PushNotificationService.swift # FCM push notifications
+│   │   └── CrashlyticsService.swift      # Firebase Crashlytics management
 │   │
 │   └── UI/
-│       └── Design.swift        # Color palette, Spacing, CornerRadius
+│       ├── Design.swift        # Color palette, Spacing, CornerRadius
+│       └── AdaptiveLayout.swift # iPad layout helpers (AdaptiveContainer, adaptiveReadableWidth)
 │
 ├── Flows/
 │   ├── AuthFlow/
@@ -248,7 +253,9 @@ Seans/
 │   │       └── TherapistProfileTab.swift   # Therapist profile + settings
 │   │
 │   └── Shared/
-│       └── CalendarSettingsView.swift  # Calendar sync toggle (therapist only)
+│       ├── CalendarSettingsView.swift      # Calendar sync toggle (therapist only)
+│       ├── NotificationsSettingsView.swift # Push notification preferences
+│       └── PrivacySettingsView.swift       # Privacy settings & account management
 │
 functions/                      # Firebase Cloud Functions
 ├── src/
@@ -378,13 +385,14 @@ Mental health data requires careful handling:
 - [x] Client anamnesis (background, presenting issues, goals)
 - [x] Homework assignment feature (with attachments, responses, sharing)
 
-### 🔲 Phase 7: Polish & Launch (Pending)
-- [ ] iPad layout optimization
+### 🔲 Phase 7: Polish & Launch (In Progress)
+- [x] iPad layout optimization (NavigationSplitView for both flows, adaptiveReadableWidth for detail screens)
 - [x] Push notifications (FCM for cancellations/reschedules)
 - [x] Payment settings screen
 - [x] Calendar settings screen
-- [ ] Notifications settings screen (stub exists)
-- [ ] Privacy settings screen
+- [x] Notifications settings screen (system status, booking/cancellation/reminder toggles)
+- [x] Privacy settings screen (Crashlytics toggle, data storage info, account deletion)
+- [x] Firebase Crashlytics integration (privacy-respecting, user-toggleable)
 - [ ] Testing & bug fixes
 - [ ] TestFlight beta release
 
