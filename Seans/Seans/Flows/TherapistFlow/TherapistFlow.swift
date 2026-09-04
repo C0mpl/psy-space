@@ -12,6 +12,7 @@ struct TherapistFlow: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var selectedTab: TherapistTab = .schedule
+    @State private var notificationPrefs = NotificationPreferences()
 
     var body: some View {
         AdaptiveContainer {
@@ -19,6 +20,7 @@ struct TherapistFlow: View {
         } regular: {
             regularLayout
         }
+        .environment(notificationPrefs)
     }
 
     // MARK: - iPhone Layout (TabView)

@@ -15,6 +15,7 @@ struct ClientFlow: View {
     @State private var journalRepo = JournalRepository()
     @State private var journalPreferences = JournalPreferences()
     @State private var homeworkRepo = HomeworkRepository()
+    @State private var notificationPrefs = NotificationPreferences()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -37,6 +38,7 @@ struct ClientFlow: View {
         .environment(journalRepo)
         .environment(journalPreferences)
         .environment(homeworkRepo)
+        .environment(notificationPrefs)
         .onChange(of: selectedTab) { oldValue, newValue in
             if oldValue == .journal && newValue != .journal {
                 journalPreferences.lockIfNeeded()

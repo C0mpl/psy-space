@@ -29,7 +29,7 @@ struct ClientProfileTab: View {
                     }
 
                     NavigationLink {
-                        Text("Сповіщення")
+                        NotificationsSettingsView()
                     } label: {
                         Label("Сповіщення", systemImage: "bell")
                     }
@@ -155,4 +155,5 @@ struct ClientProfileTab: View {
         .environment(UserRepository())
         .environment(BookingRepository())
         .environment(JournalPreferences())
+        .environment(NotificationPreferences())
 }

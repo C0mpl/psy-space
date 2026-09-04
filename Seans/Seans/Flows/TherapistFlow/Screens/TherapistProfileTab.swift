@@ -42,7 +42,7 @@ struct TherapistProfileTab: View {
                     }
 
                     NavigationLink {
-                        Text("Сповіщення")
+                        NotificationsSettingsView()
                     } label: {
                         Label("Сповіщення", systemImage: "bell")
                     }
@@ -125,4 +125,5 @@ struct TherapistProfileTab: View {
         .environment(UserRepository())
         .environment(AvailabilityRepository())
         .environment(BookingRepository())
+        .environment(NotificationPreferences())
 }
