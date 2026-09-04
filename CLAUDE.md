@@ -2,7 +2,7 @@
 
 ## Project Context
 
-This is **Seans** — a native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. Built with View-Only (VO) architecture. Target iOS 17.6+.
+This is **PsySpace** — a native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. Built with View-Only (VO) architecture. Target iOS 17.6+.
 
 The core thesis: SwiftUI View IS the ViewModel. It controls state, mutation, and UI binding. The body is the only true UI part — everything else in a View is effectively a ViewModel. Extracting UI-adjacent logic into separate Observable ViewModels unnecessarily limits SwiftUI's built-in capabilities and creates unnecessary complexity.
 
@@ -28,7 +28,7 @@ The architecture has three layers. Repositories handle business logic and data m
 
 **Flow** is a View one level above Screen. It combines the UI and logic for creating and orchestrating the Screens that belong to it. Each Flow owns its own navigation stack and an encapsulated Environment. When a Flow is destroyed, all its associated services and state are released from memory.
 
-Examples for Seans: `AuthFlow` for sign-in and onboarding, `ClientFlow` for client-facing features (booking, journal, calendar), `TherapistFlow` for therapist-only features (availability, client management, session notes).
+Examples for PsySpace: `AuthFlow` for sign-in and onboarding, `ClientFlow` for client-facing features (booking, journal, calendar), `TherapistFlow` for therapist-only features (availability, client management, session notes).
 
 ### StatelessView Purity
 
@@ -194,9 +194,9 @@ Mark closures with `[weak self]` or `[unowned self]` appropriately. Use value ty
 ### Project Structure
 
 ```
-Seans/
+PsySpace/
 ├── App/
-│   └── SeansApp.swift
+│   └── PsySpaceApp.swift
 ├── Flows/
 │   ├── AuthFlow/
 │   ├── ClientFlow/
@@ -283,7 +283,7 @@ Use `DEBUG` flag for development-only code. Remove all `print` statements in pro
 
 ## Domain-Specific Notes
 
-### Repositories for Seans
+### Repositories for PsySpace
 
 - `UserRepository` — current user, role (client/therapist), auth state
 - `BookingRepository` — time slots, reservations, confirmed bookings
@@ -291,7 +291,7 @@ Use `DEBUG` flag for development-only code. Remove all `print` statements in pro
 - `CalendarRepository` — EventKit and Google Calendar sync
 - `PaymentRepository` — Monobank invoice handling, payment status
 
-### Flows for Seans
+### Flows for PsySpace
 
 - `AuthFlow` — Apple Sign-In, role selection, onboarding
 - `ClientFlow` — booking, journal, mood tracking, calendar

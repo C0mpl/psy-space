@@ -1,4 +1,4 @@
-# Seans — Pet Project Concept & Architecture Breakdown
+# PsySpace — Pet Project Concept & Architecture Breakdown
 
 A native iOS app (iPhone & iPad) for a single therapist practice in Ukraine. The app connects one therapist with their clients, streamlining scheduling, payment processing via Monobank, session management, and therapeutic journaling.
 
@@ -161,8 +161,8 @@ let isTherapist = firebaseUser.email?.lowercased() == therapistEmail.lowercased(
 ## 5. Project Structure
 
 ```
-Seans/
-├── SeansApp.swift              # App entry point, Firebase init, Google Sign-In URL handling
+PsySpace/
+├── PsySpaceApp.swift           # App entry point, Firebase init, Google Sign-In URL handling
 ├── Stage.swift                 # Flow orchestrator, repository setup, Firestore listeners
 ├── CLAUDE.md                   # View-Only architecture documentation
 │
@@ -276,23 +276,23 @@ functions/                      # Firebase Cloud Functions
 
 ```swift
 // Primary Colors
-seansPrimary     = Color(red: 0.85, green: 0.65, blue: 0.40)  // Warm amber
-seansSecondary   = Color(red: 0.55, green: 0.65, blue: 0.55)  // Soft sage
-seansAccent      = Color(red: 0.78, green: 0.50, blue: 0.40)  // Terracotta
+psyspacePrimary     = Color(red: 0.85, green: 0.65, blue: 0.40)  // Warm amber
+psyspaceSecondary   = Color(red: 0.55, green: 0.65, blue: 0.55)  // Soft sage
+psyspaceAccent      = Color(red: 0.78, green: 0.50, blue: 0.40)  // Terracotta
 
 // Backgrounds
-seansBackground      = Color(red: 0.98, green: 0.97, blue: 0.95)  // Warm off-white
-seansBackgroundWarm  = Color(red: 0.99, green: 0.96, blue: 0.92)  // Cream
-seansCardBackground  = Color.white
+psyspaceBackground      = Color(red: 0.98, green: 0.97, blue: 0.95)  // Warm off-white
+psyspaceBackgroundWarm  = Color(red: 0.99, green: 0.96, blue: 0.92)  // Cream
+psyspaceCardBackground  = Color.white
 
 // Text
-seansTextPrimary     = Color(red: 0.20, green: 0.18, blue: 0.16)  // Warm charcoal
-seansTextSecondary   = Color(red: 0.45, green: 0.42, blue: 0.40)  // Muted brown
+psyspaceTextPrimary     = Color(red: 0.20, green: 0.18, blue: 0.16)  // Warm charcoal
+psyspaceTextSecondary   = Color(red: 0.45, green: 0.42, blue: 0.40)  // Muted brown
 
 // Decorative (for gradients & backgrounds)
-seansDecorative1     = Color(red: 0.95, green: 0.85, blue: 0.70).opacity(0.4)
-seansDecorative2     = Color(red: 0.75, green: 0.82, blue: 0.75).opacity(0.3)
-seansDecorative3     = Color(red: 0.90, green: 0.75, blue: 0.65).opacity(0.25)
+psyspaceDecorative1     = Color(red: 0.95, green: 0.85, blue: 0.70).opacity(0.4)
+psyspaceDecorative2     = Color(red: 0.75, green: 0.82, blue: 0.75).opacity(0.3)
+psyspaceDecorative3     = Color(red: 0.90, green: 0.75, blue: 0.65).opacity(0.25)
 ```
 
 ### Spacing & Layout

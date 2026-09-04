@@ -1,0 +1,676 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E6E06C03303C900200447831 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C02303C900200447831 /* FirebaseAuth */; };
+		E6E06C05303C900200447831 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C04303C900200447831 /* FirebaseFirestore */; };
+		E6E06C07303C900200447831 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C06303C900200447831 /* FirebaseStorage */; };
+		E6E06C0A303C959700447831 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C09303C959700447831 /* GoogleSignIn */; };
+		E6E06C0C303C959700447831 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C0B303C959700447831 /* GoogleSignInSwift */; };
+		E6E06C0D303C900200447831 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = E6E06C0E303C900200447831 /* FirebaseCrashlytics */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E6E06BA1303B4A0E00447831 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E6E06B8B303B4A0C00447831 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E6E06B92303B4A0C00447831;
+			remoteInfo = PsySpace;
+		};
+		E6E06BAB303B4A0E00447831 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E6E06B8B303B4A0C00447831 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E6E06B92303B4A0C00447831;
+			remoteInfo = PsySpace;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		E6E06B93303B4A0C00447831 /* PsySpace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PsySpace.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E6E06BA0303B4A0E00447831 /* PsySpaceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PsySpaceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E6E06BAA303B4A0E00447831 /* PsySpaceUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PsySpaceUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E6E06C10303CA68300447831 /* Exceptions for "PsySpace" folder in "PsySpace" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E6E06B92303B4A0C00447831 /* PsySpace */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		E6E06B95303B4A0C00447831 /* PsySpace */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E6E06C10303CA68300447831 /* Exceptions for "PsySpace" folder in "PsySpace" target */,
+			);
+			path = PsySpace;
+			sourceTree = "<group>";
+		};
+		E6E06BA3303B4A0E00447831 /* PsySpaceTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PsySpaceTests;
+			sourceTree = "<group>";
+		};
+		E6E06BAD303B4A0E00447831 /* PsySpaceUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PsySpaceUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E6E06B90303B4A0C00447831 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E6E06C03303C900200447831 /* FirebaseAuth in Frameworks */,
+				E6E06C05303C900200447831 /* FirebaseFirestore in Frameworks */,
+				E6E06C07303C900200447831 /* FirebaseStorage in Frameworks */,
+				E6E06C0A303C959700447831 /* GoogleSignIn in Frameworks */,
+				E6E06C0C303C959700447831 /* GoogleSignInSwift in Frameworks */,
+				E6E06C0D303C900200447831 /* FirebaseCrashlytics in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6E06B9D303B4A0E00447831 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6E06BA7303B4A0E00447831 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E6E06B8A303B4A0C00447831 = {
+			isa = PBXGroup;
+			children = (
+				E6E06B95303B4A0C00447831 /* PsySpace */,
+				E6E06BA3303B4A0E00447831 /* PsySpaceTests */,
+				E6E06BAD303B4A0E00447831 /* PsySpaceUITests */,
+				E6E06B94303B4A0C00447831 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E6E06B94303B4A0C00447831 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E6E06B93303B4A0C00447831 /* PsySpace.app */,
+				E6E06BA0303B4A0E00447831 /* PsySpaceTests.xctest */,
+				E6E06BAA303B4A0E00447831 /* PsySpaceUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E6E06B92303B4A0C00447831 /* PsySpace */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6E06BB4303B4A0E00447831 /* Build configuration list for PBXNativeTarget "PsySpace" */;
+			buildPhases = (
+				E6E06B8F303B4A0C00447831 /* Sources */,
+				E6E06B90303B4A0C00447831 /* Frameworks */,
+				E6E06B91303B4A0C00447831 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E6E06B95303B4A0C00447831 /* PsySpace */,
+			);
+			name = PsySpace;
+			packageProductDependencies = (
+				E6E06C02303C900200447831 /* FirebaseAuth */,
+				E6E06C04303C900200447831 /* FirebaseFirestore */,
+				E6E06C09303C959700447831 /* GoogleSignIn */,
+				E6E06C0B303C959700447831 /* GoogleSignInSwift */,
+				E6E06C0E303C900200447831 /* FirebaseCrashlytics */,
+			);
+			productName = PsySpace;
+			productReference = E6E06B93303B4A0C00447831 /* PsySpace.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E6E06B9F303B4A0E00447831 /* PsySpaceTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6E06BB7303B4A0E00447831 /* Build configuration list for PBXNativeTarget "PsySpaceTests" */;
+			buildPhases = (
+				E6E06B9C303B4A0E00447831 /* Sources */,
+				E6E06B9D303B4A0E00447831 /* Frameworks */,
+				E6E06B9E303B4A0E00447831 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E6E06BA2303B4A0E00447831 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E6E06BA3303B4A0E00447831 /* PsySpaceTests */,
+			);
+			name = PsySpaceTests;
+			packageProductDependencies = (
+			);
+			productName = PsySpaceTests;
+			productReference = E6E06BA0303B4A0E00447831 /* PsySpaceTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E6E06BA9303B4A0E00447831 /* PsySpaceUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6E06BBA303B4A0E00447831 /* Build configuration list for PBXNativeTarget "PsySpaceUITests" */;
+			buildPhases = (
+				E6E06BA6303B4A0E00447831 /* Sources */,
+				E6E06BA7303B4A0E00447831 /* Frameworks */,
+				E6E06BA8303B4A0E00447831 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E6E06BAC303B4A0E00447831 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E6E06BAD303B4A0E00447831 /* PsySpaceUITests */,
+			);
+			name = PsySpaceUITests;
+			packageProductDependencies = (
+			);
+			productName = PsySpaceUITests;
+			productReference = E6E06BAA303B4A0E00447831 /* PsySpaceUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E6E06B8B303B4A0C00447831 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					E6E06B92303B4A0C00447831 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					E6E06B9F303B4A0E00447831 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = E6E06B92303B4A0C00447831;
+					};
+					E6E06BA9303B4A0E00447831 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = E6E06B92303B4A0C00447831;
+					};
+				};
+			};
+			buildConfigurationList = E6E06B8E303B4A0C00447831 /* Build configuration list for PBXProject "PsySpace" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E6E06B8A303B4A0C00447831;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E6E06C01303C900200447831 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				E6E06C08303C959700447831 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E6E06B94303B4A0C00447831 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E6E06B92303B4A0C00447831 /* PsySpace */,
+				E6E06B9F303B4A0E00447831 /* PsySpaceTests */,
+				E6E06BA9303B4A0E00447831 /* PsySpaceUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E6E06B91303B4A0C00447831 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6E06B9E303B4A0E00447831 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6E06BA8303B4A0E00447831 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E6E06B8F303B4A0C00447831 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6E06B9C303B4A0E00447831 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E6E06BA6303B4A0E00447831 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E6E06BA2303B4A0E00447831 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E6E06B92303B4A0C00447831 /* PsySpace */;
+			targetProxy = E6E06BA1303B4A0E00447831 /* PBXContainerItemProxy */;
+		};
+		E6E06BAC303B4A0E00447831 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E6E06B92303B4A0C00447831 /* PsySpace */;
+			targetProxy = E6E06BAB303B4A0E00447831 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		E6E06BB2303B4A0E00447831 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 75B66BQ85B;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		E6E06BB3303B4A0E00447831 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 75B66BQ85B;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		E6E06BB5303B4A0E00447831 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 75B66BQ85B;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PsySpace/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.IliasMirzoiev.PsySpace;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E6E06BB6303B4A0E00447831 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 75B66BQ85B;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PsySpace/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.IliasMirzoiev.PsySpace;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E6E06BB8303B4A0E00447831 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 75B66BQ85B;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.IliasMirzoiev.PsySpaceTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PsySpace.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PsySpace";
+			};
+			name = Debug;
+		};
+		E6E06BB9303B4A0E00447831 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 75B66BQ85B;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.IliasMirzoiev.PsySpaceTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PsySpace.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PsySpace";
+			};
+			name = Release;
+		};
+		E6E06BBB303B4A0E00447831 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 75B66BQ85B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.IliasMirzoiev.PsySpaceUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PsySpace;
+			};
+			name = Debug;
+		};
+		E6E06BBC303B4A0E00447831 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 75B66BQ85B;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.IliasMirzoiev.PsySpaceUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PsySpace;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E6E06B8E303B4A0C00447831 /* Build configuration list for PBXProject "PsySpace" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6E06BB2303B4A0E00447831 /* Debug */,
+				E6E06BB3303B4A0E00447831 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E6E06BB4303B4A0E00447831 /* Build configuration list for PBXNativeTarget "PsySpace" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6E06BB5303B4A0E00447831 /* Debug */,
+				E6E06BB6303B4A0E00447831 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E6E06BB7303B4A0E00447831 /* Build configuration list for PBXNativeTarget "PsySpaceTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6E06BB8303B4A0E00447831 /* Debug */,
+				E6E06BB9303B4A0E00447831 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E6E06BBA303B4A0E00447831 /* Build configuration list for PBXNativeTarget "PsySpaceUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6E06BBB303B4A0E00447831 /* Debug */,
+				E6E06BBC303B4A0E00447831 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E6E06C01303C900200447831 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.18.0;
+			};
+		};
+		E6E06C08303C959700447831 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E6E06C02303C900200447831 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6E06C01303C900200447831 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		E6E06C04303C900200447831 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6E06C01303C900200447831 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		E6E06C06303C900200447831 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6E06C01303C900200447831 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+		E6E06C09303C959700447831 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6E06C08303C959700447831 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		E6E06C0B303C959700447831 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6E06C08303C959700447831 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+		E6E06C0E303C900200447831 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6E06C01303C900200447831 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E6E06B8B303B4A0C00447831 /* Project object */;
+}
