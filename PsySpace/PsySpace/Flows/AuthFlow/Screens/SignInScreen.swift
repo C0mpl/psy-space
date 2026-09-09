@@ -81,29 +81,10 @@ struct SignInScreen: View {
     }
 
     private var logoView: some View {
-        ZStack {
-            Circle()
-                .fill(Color.psyspacePrimary.opacity(0.15))
-                .frame(width: logoSize * 2.4, height: logoSize * 2.4)
-
-            Circle()
-                .fill(Color.psyspacePrimary.opacity(0.25))
-                .frame(width: logoSize * 1.8, height: logoSize * 1.8)
-
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [Color.psyspacePrimary, Color.psyspaceAccent],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: logoSize * 1.3, height: logoSize * 1.3)
-
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: logoSize * 0.6))
-                .foregroundStyle(.white)
-        }
+        Image("LaunchLogo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: logoSize * 2.4, height: logoSize * 2.4)
     }
 
     private var signInSection: some View {

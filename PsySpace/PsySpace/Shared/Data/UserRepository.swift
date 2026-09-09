@@ -20,6 +20,7 @@ final class UserRepository {
 
     var currentUser: User?
     var isLoading = false
+    var isCheckingAuth = true
     var error: UserError?
 
     var isAuthenticated: Bool { currentUser != nil }
@@ -38,6 +39,7 @@ final class UserRepository {
                     } else {
                         self?.stopUserListener()
                         self?.currentUser = nil
+                        self?.isCheckingAuth = false
                     }
                 }
             }
@@ -47,12 +49,14 @@ final class UserRepository {
     private func handleFirebaseUser(_ firebaseUser: FirebaseAuth.User) {
         if let storedUser = storage?.loadUser(), storedUser.id == firebaseUser.uid {
             currentUser = storedUser
+            isCheckingAuth = false
             startUserListener(userId: firebaseUser.uid)
             return
         }
 
         Task {
             await loadOrCreateUser(firebaseUser: firebaseUser)
+            isCheckingAuth = false
         }
     }
 

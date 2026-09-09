@@ -13,17 +13,32 @@ struct Stage: View {
     @State private var bookingRepo = BookingRepository()
     @State private var notificationRepo = NotificationRepository()
     @State private var paymentRepo = PaymentRepository()
+    @State private var minimumSplashTimePassed = false
+
+    private var showSplash: Bool {
+        !minimumSplashTimePassed || userRepo.isCheckingAuth
+    }
 
     var body: some View {
         Group {
-            switch currentFlow {
-            case .auth:
-                AuthFlow()
-            case .client:
-                ClientFlow()
-            case .therapist:
-                TherapistFlow()
+            if showSplash {
+                SplashScreen()
+                    .transition(.opacity)
+            } else {
+                switch currentFlow {
+                case .auth:
+                    AuthFlow()
+                case .client:
+                    ClientFlow()
+                case .therapist:
+                    TherapistFlow()
+                }
             }
+        }
+        .animation(.easeInOut(duration: 0.3), value: showSplash)
+        .task {
+            try? await Task.sleep(for: .seconds(1))
+            minimumSplashTimePassed = true
         }
         .environment(userRepo)
         .environment(availabilityRepo)
@@ -166,6 +181,30 @@ private struct CancellationAlert: View {
     }
 }
 
+private struct SplashScreen: View {
+    var body: some View {
+        ZStack {
+            Color.psyspaceBackground
+                .ignoresSafeArea()
+
+            VStack(spacing: Spacing.xl) {
+                Image("LaunchLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+
+                ProgressView()
+                    .tint(Color.psyspacePrimary)
+                    .scaleEffect(1.2)
+            }
+        }
+    }
+}
+
 #Preview {
     Stage()
+}
+
+#Preview("Splash") {
+    SplashScreen()
 }
