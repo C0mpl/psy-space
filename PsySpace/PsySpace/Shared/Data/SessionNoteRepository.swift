@@ -16,7 +16,8 @@ final class SessionNoteRepository {
     var isLoading = false
     var error: SessionNoteError?
 
-    private let firestore = FirestoreService.shared
+    private let notesService = FirestoreSessionNoteService.shared
+    private let anamnesisService = FirestoreAnamnesisService.shared
     private var storage: SessionNoteStorage?
     private var notesListener: ListenerRegistration?
     private var anamnesisListener: ListenerRegistration?
@@ -49,7 +50,7 @@ final class SessionNoteRepository {
         print("SessionNoteRepository: Starting listeners for client \(clientId)")
         #endif
 
-        notesListener = firestore.listenToSessionNotes(forClientId: clientId) { [weak self] notes in
+        notesListener = notesService.listenToSessionNotes(forClientId: clientId) { [weak self] notes in
             Task { @MainActor in
                 #if DEBUG
                 print("SessionNoteRepository: Received \(notes.count) notes from Firestore")
@@ -59,7 +60,7 @@ final class SessionNoteRepository {
             }
         }
 
-        anamnesisListener = firestore.listenToAnamnesis(forClientId: clientId) { [weak self] anamnesis in
+        anamnesisListener = anamnesisService.listenToAnamnesis(forClientId: clientId) { [weak self] anamnesis in
             Task { @MainActor in
                 #if DEBUG
                 print("SessionNoteRepository: Received anamnesis from Firestore: \(anamnesis != nil)")
@@ -107,7 +108,7 @@ final class SessionNoteRepository {
         storage?.saveNote(note)
 
         do {
-            try await firestore.createSessionNote(note)
+            try await notesService.createSessionNote(note)
         } catch {
             notes.removeAll { $0.noteId == note.noteId }
             storage?.deleteNote(note.noteId)
@@ -128,7 +129,7 @@ final class SessionNoteRepository {
         storage?.saveNote(updatedNote)
 
         do {
-            try await firestore.updateSessionNote(updatedNote)
+            try await notesService.updateSessionNote(updatedNote)
         } catch {
             notes[index] = previousNote
             storage?.saveNote(previousNote)
@@ -145,7 +146,7 @@ final class SessionNoteRepository {
         storage?.deleteNote(noteId)
 
         do {
-            try await firestore.deleteSessionNote(noteId)
+            try await notesService.deleteSessionNote(noteId)
         } catch {
             notes.insert(removedNote, at: index)
             storage?.saveNote(removedNote)
@@ -186,7 +187,7 @@ final class SessionNoteRepository {
         storage?.saveAnamnesis(updatedAnamnesis)
 
         do {
-            try await firestore.saveAnamnesis(updatedAnamnesis)
+            try await anamnesisService.saveAnamnesis(updatedAnamnesis)
         } catch {
             anamnesis = previousAnamnesis
             if let previousAnamnesis {

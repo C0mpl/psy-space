@@ -39,9 +39,14 @@ struct HomeworkEditor: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Spacing.lg) {
-                    titleSection
-                    instructionsSection
-                    attachmentsSection
+                    HomeworkTitleSection(title: $title)
+                    HomeworkInstructionsSection(state: instructionsState)
+                    HomeworkAttachmentsSection(
+                        attachments: $attachments,
+                        pendingPDFs: $pendingPDFs,
+                        onAddPDF: { showPDFPicker = true },
+                        onAddLink: { showLinkSheet = true }
+                    )
                 }
                 .padding()
                 .adaptiveReadableWidth()
@@ -49,41 +54,7 @@ struct HomeworkEditor: View {
             .background(Color.psyspaceBackground)
             .navigationTitle(isEditing ? "Редагувати завдання" : "Нове завдання")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Скасувати") {
-                        dismiss()
-                    }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Зберегти") {
-                        Task { await save() }
-                    }
-                    .disabled(!canSave)
-                }
-
-                if isEditing {
-                    ToolbarItem(placement: .destructiveAction) {
-                        Menu {
-                            Button(role: .destructive) {
-                                showArchiveConfirmation = true
-                            } label: {
-                                Label("Архівувати", systemImage: "archivebox")
-                            }
-
-                            Button(role: .destructive) {
-                                showDeleteConfirmation = true
-                            } label: {
-                                Label("Видалити", systemImage: "trash")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .foregroundStyle(Color.psyspaceTextSecondary)
-                        }
-                    }
-                }
-            }
+            .toolbar { toolbarContent }
             .confirmationDialog(
                 "Архівувати завдання?",
                 isPresented: $showArchiveConfirmation,
@@ -131,91 +102,45 @@ struct HomeworkEditor: View {
         }
     }
 
-    private var titleSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text("Назва завдання")
-                .font(.caption)
-                .foregroundStyle(Color.psyspaceTextSecondary)
-
-            TextField("Наприклад: Вправа на релаксацію", text: $title)
-                .textFieldStyle(.plain)
-                .padding(Spacing.sm)
-                .background(Color.psyspaceCardBackground)
-                .clipShape(.rect(cornerRadius: CornerRadius.sm))
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Скасувати") { dismiss() }
         }
-    }
 
-    private var instructionsSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text("Інструкції")
-                .font(.caption)
-                .foregroundStyle(Color.psyspaceTextSecondary)
-
-            RichTextEditor(
-                state: instructionsState,
-                placeholder: "Опишіть завдання детально...",
-                minHeight: 200
-            )
+        ToolbarItem(placement: .confirmationAction) {
+            Button("Зберегти") {
+                Task { await save() }
+            }
+            .disabled(!canSave)
         }
-    }
 
-    private var attachmentsSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                Text("Вкладення")
-                    .font(.caption)
-                    .foregroundStyle(Color.psyspaceTextSecondary)
-
-                Spacer()
-
+        if isEditing {
+            ToolbarItem(placement: .destructiveAction) {
                 Menu {
-                    Button {
-                        showPDFPicker = true
+                    Button(role: .destructive) {
+                        showArchiveConfirmation = true
                     } label: {
-                        Label("PDF файл", systemImage: "doc.fill")
+                        Label("Архівувати", systemImage: "archivebox")
                     }
 
-                    Button {
-                        showLinkSheet = true
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
                     } label: {
-                        Label("Посилання", systemImage: "link")
+                        Label("Видалити", systemImage: "trash")
                     }
                 } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(Color.psyspacePrimary)
-                }
-            }
-
-            if attachments.isEmpty && pendingPDFs.isEmpty {
-                Text("Немає вкладень")
-                    .font(.caption)
-                    .foregroundStyle(Color.psyspaceTextSecondary.opacity(0.7))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, Spacing.md)
-            } else {
-                VStack(spacing: Spacing.xs) {
-                    ForEach(attachments) { attachment in
-                        AttachmentRow(attachment: attachment) {
-                            attachments.removeAll { $0.attachmentId == attachment.attachmentId }
-                        }
-                    }
-
-                    ForEach(pendingPDFs) { pdf in
-                        PendingPDFRow(pdf: pdf) {
-                            pendingPDFs.removeAll { $0.id == pdf.id }
-                        }
-                    }
+                    Image(systemName: "ellipsis.circle")
+                        .foregroundStyle(Color.psyspaceTextSecondary)
                 }
             }
         }
-        .padding(Spacing.sm)
-        .background(Color.psyspaceCardBackground)
-        .clipShape(.rect(cornerRadius: CornerRadius.sm))
     }
+
+    // MARK: - Actions
 
     private func loadExistingHomework() {
         guard let hw = existingHomework else { return }
-
         title = hw.title
         instructionsState.load(serialized: hw.instructions)
         attachments = hw.attachments
@@ -285,7 +210,6 @@ struct HomeworkEditor: View {
         let plainTextInstructions = instructionsState.plainText.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Upload pending PDFs
         var finalAttachments = attachments
         let homeworkId = existingHomework?.homeworkId ?? UUID().uuidString
 
@@ -368,140 +292,6 @@ struct HomeworkEditor: View {
             print("HomeworkEditor: Failed to delete homework: \(error)")
             #endif
         }
-    }
-}
-
-private struct PendingPDF: Identifiable {
-    let id: String
-    let name: String
-    let localURL: URL
-}
-
-private struct AttachmentRow: View {
-    let attachment: HomeworkAttachment
-    var onDelete: () -> Void
-
-    var body: some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: attachment.type == .pdf ? "doc.fill" : "link")
-                .foregroundStyle(Color.psyspacePrimary)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(attachment.name)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.psyspaceTextPrimary)
-                    .lineLimit(1)
-
-                if let size = attachment.formattedSize {
-                    Text(size)
-                        .font(.caption2)
-                        .foregroundStyle(Color.psyspaceTextSecondary)
-                }
-            }
-
-            Spacer()
-
-            Button(action: onDelete) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(Color.psyspaceTextSecondary)
-            }
-        }
-        .padding(Spacing.xs)
-        .background(Color.psyspaceBackground)
-        .clipShape(.rect(cornerRadius: CornerRadius.sm))
-    }
-}
-
-private struct PendingPDFRow: View {
-    let pdf: PendingPDF
-    var onDelete: () -> Void
-
-    var body: some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: "doc.fill")
-                .foregroundStyle(Color.psyspaceSecondary)
-
-            Text(pdf.name)
-                .font(.subheadline)
-                .foregroundStyle(Color.psyspaceTextPrimary)
-                .lineLimit(1)
-
-            Text("(очікує)")
-                .font(.caption2)
-                .foregroundStyle(Color.psyspaceTextSecondary)
-
-            Spacer()
-
-            Button(action: onDelete) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(Color.psyspaceTextSecondary)
-            }
-        }
-        .padding(Spacing.xs)
-        .background(Color.psyspaceBackground)
-        .clipShape(.rect(cornerRadius: CornerRadius.sm))
-    }
-}
-
-private struct AddLinkSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var url: String
-    @Binding var name: String
-    var onAdd: () -> Void
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: Spacing.lg) {
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("URL посилання")
-                        .font(.caption)
-                        .foregroundStyle(Color.psyspaceTextSecondary)
-
-                    TextField("https://...", text: $url)
-                        .textFieldStyle(.plain)
-                        .keyboardType(.URL)
-                        .textContentType(.URL)
-                        .autocapitalization(.none)
-                        .padding(Spacing.sm)
-                        .background(Color.psyspaceCardBackground)
-                        .clipShape(.rect(cornerRadius: CornerRadius.sm))
-                }
-
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("Назва (необов'язково)")
-                        .font(.caption)
-                        .foregroundStyle(Color.psyspaceTextSecondary)
-
-                    TextField("Опис посилання", text: $name)
-                        .textFieldStyle(.plain)
-                        .padding(Spacing.sm)
-                        .background(Color.psyspaceCardBackground)
-                        .clipShape(.rect(cornerRadius: CornerRadius.sm))
-                }
-
-                Spacer()
-            }
-            .padding()
-            .background(Color.psyspaceBackground)
-            .navigationTitle("Додати посилання")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Скасувати") {
-                        dismiss()
-                    }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Додати") {
-                        onAdd()
-                        dismiss()
-                    }
-                    .disabled(url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-        }
-        .presentationDetents([.medium])
     }
 }
 

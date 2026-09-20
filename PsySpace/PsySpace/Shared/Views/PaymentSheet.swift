@@ -31,20 +31,36 @@ struct PaymentSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 VStack(spacing: Spacing.md) {
-                    bookingInfoCard
+                    PaymentBookingInfoCard(
+                        date: date,
+                        slotTime: slot.startTimeFormatted,
+                        priceUAH: priceUAH
+                    )
 
                     if hasCredit && payment == nil {
-                        creditToggleRow
+                        PaymentCreditToggleRow(
+                            userCreditUAH: userCreditUAH,
+                            useCredit: $useCredit
+                        )
                     }
 
-                    priceCard
+                    PaymentPriceCard(
+                        hasCredit: hasCredit,
+                        useCredit: useCredit,
+                        creditToUseUAH: creditToUseUAH,
+                        amountToPayUAH: amountToPayUAH,
+                        isPaidInFull: isPaidInFull
+                    )
                 }
                 .padding(Spacing.md)
 
                 Spacer(minLength: Spacing.md)
 
                 VStack(spacing: Spacing.sm) {
-                    statusIndicator
+                    PaymentStatusIndicator(
+                        isWaiting: isWaitingForPayment,
+                        status: payment?.status
+                    )
                     actionButtons
                 }
                 .padding(.horizontal, Spacing.md)
@@ -79,268 +95,120 @@ struct PaymentSheet: View {
         }
     }
 
+    // MARK: - Computed Properties
+
     private var isWaitingForPayment: Bool {
         payment != nil && payment?.status.isTerminal == false
     }
 
-    private var priceKopiykas: Int {
-        priceUAH * 100
-    }
-
-    private var userCreditUAH: Int {
-        userCredit / 100
-    }
-
-    private var hasCredit: Bool {
-        userCredit > 0
-    }
+    private var priceKopiykas: Int { priceUAH * 100 }
+    private var userCreditUAH: Int { userCredit / 100 }
+    private var hasCredit: Bool { userCredit > 0 }
 
     private var creditToUse: Int {
         guard useCredit, hasCredit else { return 0 }
         return min(userCredit, priceKopiykas)
     }
 
-    private var creditToUseUAH: Int {
-        creditToUse / 100
-    }
+    private var creditToUseUAH: Int { creditToUse / 100 }
+    private var amountToPay: Int { max(0, priceKopiykas - creditToUse) }
+    private var amountToPayUAH: Int { amountToPay / 100 }
+    private var isPaidInFull: Bool { amountToPay == 0 && useCredit }
 
-    private var amountToPay: Int {
-        max(0, priceKopiykas - creditToUse)
-    }
-
-    private var amountToPayUAH: Int {
-        amountToPay / 100
-    }
-
-    private var isPaidInFull: Bool {
-        amountToPay == 0 && useCredit
-    }
-
-    private var bookingInfoCard: some View {
-        HStack(spacing: Spacing.md) {
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text("Сеанс")
-                    .font(.caption)
-                    .foregroundStyle(Color.psyspaceTextSecondary)
-
-                Text(date.formatted(.dateTime.day().month(.wide)))
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.psyspaceTextPrimary)
-
-                Text(slot.startTimeFormatted)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.psyspacePrimary)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: Spacing.xxs) {
-                Text("Вартість")
-                    .font(.caption)
-                    .foregroundStyle(Color.psyspaceTextSecondary)
-
-                Text("\(priceUAH) \u{20B4}")
-                    .font(.title2.weight(.bold).monospacedDigit())
-                    .foregroundStyle(Color.psyspaceTextPrimary)
-            }
-        }
-        .padding(Spacing.md)
-        .background(Color.psyspaceCardBackground)
-        .clipShape(.rect(cornerRadius: CornerRadius.lg))
-        .overlay {
-            RoundedRectangle(cornerRadius: CornerRadius.lg)
-                .stroke(Color.psyspacePrimary.opacity(0.2), lineWidth: 1)
-        }
-    }
-
-    private var creditToggleRow: some View {
-        HStack {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "wallet.bifold.fill")
-                    .foregroundStyle(Color.psyspaceSuccess)
-
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Кредит")
-                        .font(.subheadline.weight(.medium))
-                    Text("\(userCreditUAH) \u{20B4} доступно")
-                        .font(.caption)
-                        .foregroundStyle(Color.psyspaceTextSecondary)
-                }
-            }
-
-            Spacer()
-
-            Toggle("Використати кредит", isOn: $useCredit)
-                .labelsHidden()
-                .tint(Color.psyspaceSuccess)
-                .accessibilityLabel("Використати кредит \(userCreditUAH) гривень")
-        }
-        .padding(Spacing.sm)
-        .background(Color.psyspaceSuccess.opacity(0.08))
-        .clipShape(.rect(cornerRadius: CornerRadius.md))
-    }
-
-    private var priceCard: some View {
-        VStack(spacing: Spacing.sm) {
-            if hasCredit && useCredit && creditToUse > 0 {
-                HStack {
-                    Text("Кредит")
-                    Spacer()
-                    Text("-\(creditToUseUAH) \u{20B4}")
-                        .foregroundStyle(Color.psyspaceSuccess)
-                }
-                .font(.subheadline)
-                .foregroundStyle(Color.psyspaceTextSecondary)
-
-                Divider()
-            }
-
-            HStack {
-                Text(isPaidInFull ? "Оплачено кредитом" : "До сплати")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.psyspaceTextSecondary)
-
-                Spacer()
-
-                Text("\(amountToPayUAH) \u{20B4}")
-                    .font(.system(.title, design: .rounded, weight: .bold))
-                    .foregroundStyle(isPaidInFull ? Color.psyspaceSuccess : Color.psyspacePrimary)
-            }
-        }
-        .padding(Spacing.md)
-        .background(Color.psyspaceCardBackground)
-        .clipShape(.rect(cornerRadius: CornerRadius.lg))
-    }
-
-    @ViewBuilder
-    private var statusIndicator: some View {
-        if isWaitingForPayment {
-            HStack(spacing: Spacing.sm) {
-                ProgressView()
-                    .tint(Color.psyspacePrimary)
-                Text("Очікуємо підтвердження...")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.psyspaceTextSecondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(Spacing.sm)
-            .background(Color.psyspacePrimary.opacity(0.1))
-            .clipShape(.rect(cornerRadius: CornerRadius.md))
-        }
-
-        if payment?.status == .success {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "checkmark.circle.fill")
-                Text("Оплата успішна")
-                    .font(.subheadline.weight(.medium))
-            }
-            .foregroundStyle(Color.psyspaceSuccess)
-            .frame(maxWidth: .infinity)
-            .padding(Spacing.sm)
-            .background(Color.psyspaceSuccess.opacity(0.1))
-            .clipShape(.rect(cornerRadius: CornerRadius.md))
-        }
-
-        if payment?.status == .failure || payment?.status == .expired {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "exclamationmark.circle.fill")
-                Text(payment?.status == .expired ? "Час вичерпано" : "Оплата не вдалася")
-                    .font(.subheadline.weight(.medium))
-            }
-            .foregroundStyle(Color.psyspaceError)
-            .frame(maxWidth: .infinity)
-            .padding(Spacing.sm)
-            .background(Color.psyspaceError.opacity(0.1))
-            .clipShape(.rect(cornerRadius: CornerRadius.md))
-        }
-    }
+    // MARK: - Action Buttons
 
     private var actionButtons: some View {
         VStack(spacing: Spacing.sm) {
             if payment == nil {
-                if isPaidInFull {
-                    Button {
-                        confirmWithCreditOnly()
-                    } label: {
-                        Label("Записатися", systemImage: "checkmark.circle.fill")
-                    }
-                    .buttonStyle(PsySpacePrimaryButtonStyle())
-                } else {
-                    Button {
-                        initiatePayment()
-                    } label: {
-                        Label("Оплатити \(amountToPayUAH) \u{20B4}", systemImage: "creditcard.fill")
-                    }
-                    .buttonStyle(PsySpacePrimaryButtonStyle(isLoading: paymentRepo.isProcessing))
-                    .disabled(paymentRepo.isProcessing)
-                }
-
-                #if DEBUG
-                Button {
-                    skipPayment()
-                } label: {
-                    Text("Пропустити (debug)")
-                        .font(.caption)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.psyspaceTextSecondary)
-                #endif
+                initialButtons
             } else if let payment, !payment.status.isTerminal {
-                if isTestMode {
-                    testModeButtons
-                } else {
-                    Button {
-                        openPaymentPage()
-                    } label: {
-                        Label("Перейти до оплати", systemImage: "arrow.up.right.square.fill")
-                    }
-                    .buttonStyle(PsySpacePrimaryButtonStyle())
-                }
+                pendingButtons
             } else if payment?.status == .success {
-                Button {
-                    if let payment {
-                        onComplete(payment, useCredit ? creditToUse : nil)
-                    }
-                } label: {
-                    Label("Готово", systemImage: "checkmark")
-                }
-                .buttonStyle(PsySpacePrimaryButtonStyle())
+                successButton
             } else if payment?.status == .failure || payment?.status == .expired {
-                Button {
-                    retryPayment()
-                } label: {
-                    Label("Спробувати ще", systemImage: "arrow.clockwise")
-                }
-                .buttonStyle(PsySpacePrimaryButtonStyle())
+                retryButton
             }
         }
     }
 
     @ViewBuilder
-    private var testModeButtons: some View {
-        HStack(spacing: Spacing.sm) {
+    private var initialButtons: some View {
+        if isPaidInFull {
             Button {
-                paymentRepo.simulatePaymentSuccess()
-                payment?.status = .success
-                payment?.paidAt = .now
-                HapticService.notification(.success)
+                confirmWithCreditOnly()
             } label: {
-                Label("Успіх", systemImage: "checkmark")
-                    .frame(maxWidth: .infinity)
+                Label("Записатися", systemImage: "checkmark.circle.fill")
             }
             .buttonStyle(PsySpacePrimaryButtonStyle())
-
+        } else {
             Button {
-                paymentRepo.simulatePaymentFailure()
-                payment?.status = .failure
-                HapticService.notification(.error)
+                initiatePayment()
             } label: {
-                Label("Помилка", systemImage: "xmark")
-                    .frame(maxWidth: .infinity)
+                Label("Оплатити \(amountToPayUAH) \u{20B4}", systemImage: "creditcard.fill")
             }
-            .buttonStyle(PsySpaceDestructiveButtonStyle())
+            .buttonStyle(PsySpacePrimaryButtonStyle(isLoading: paymentRepo.isProcessing))
+            .disabled(paymentRepo.isProcessing)
+        }
+
+        #if DEBUG
+        Button {
+            skipPayment()
+        } label: {
+            Text("Пропустити (debug)")
+                .font(.caption)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.psyspaceTextSecondary)
+        #endif
+    }
+
+    @ViewBuilder
+    private var pendingButtons: some View {
+        if isTestMode {
+            PaymentTestModeButtons(
+                onSuccess: {
+                    paymentRepo.simulatePaymentSuccess()
+                    payment?.status = .success
+                    payment?.paidAt = .now
+                    HapticService.notification(.success)
+                },
+                onFailure: {
+                    paymentRepo.simulatePaymentFailure()
+                    payment?.status = .failure
+                    HapticService.notification(.error)
+                }
+            )
+        } else {
+            Button {
+                openPaymentPage()
+            } label: {
+                Label("Перейти до оплати", systemImage: "arrow.up.right.square.fill")
+            }
+            .buttonStyle(PsySpacePrimaryButtonStyle())
         }
     }
+
+    private var successButton: some View {
+        Button {
+            if let payment {
+                onComplete(payment, useCredit ? creditToUse : nil)
+            }
+        } label: {
+            Label("Готово", systemImage: "checkmark")
+        }
+        .buttonStyle(PsySpacePrimaryButtonStyle())
+    }
+
+    private var retryButton: some View {
+        Button {
+            retryPayment()
+        } label: {
+            Label("Спробувати ще", systemImage: "arrow.clockwise")
+        }
+        .buttonStyle(PsySpacePrimaryButtonStyle())
+    }
+
+    // MARK: - Actions
 
     private func confirmWithCreditOnly() {
         let creditPayment = Payment(

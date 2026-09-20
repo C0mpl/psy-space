@@ -15,7 +15,7 @@ final class AvailabilityRepository {
     var isLoading = false
     var error: Error?
 
-    private let firestore = FirestoreService.shared
+    private let firestore = FirestoreAvailabilityService.shared
     private var listener: ListenerRegistration?
 
     init() {

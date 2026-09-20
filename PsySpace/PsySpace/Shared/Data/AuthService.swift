@@ -118,7 +118,7 @@ actor AuthService {
         }
 
         do {
-            try await FirestoreService.shared.saveTherapistAuthCode(authCode)
+            try await FirestoreUserService.shared.saveTherapistAuthCode(authCode)
             #if DEBUG
             print("✅ Server auth code saved for token exchange")
             #endif

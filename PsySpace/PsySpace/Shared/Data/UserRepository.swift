@@ -13,7 +13,7 @@ import Foundation
 @MainActor
 final class UserRepository {
     private let authService = AuthService.shared
-    private let firestore = FirestoreService.shared
+    private let firestore = FirestoreUserService.shared
     private let storage: UserStorage?
     private var authListener: AuthStateDidChangeListenerHandle?
     private var userListener: ListenerRegistration?

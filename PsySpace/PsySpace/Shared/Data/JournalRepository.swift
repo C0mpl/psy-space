@@ -15,7 +15,7 @@ final class JournalRepository {
     var isLoading = false
     var error: JournalError?
 
-    private let firestore = FirestoreService.shared
+    private let firestore = FirestoreJournalService.shared
     private var storage: JournalStorage?
     private var listener: ListenerRegistration?
     private var clientId: String?

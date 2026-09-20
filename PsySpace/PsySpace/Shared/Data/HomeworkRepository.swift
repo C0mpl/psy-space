@@ -16,7 +16,7 @@ final class HomeworkRepository {
     var isLoading = false
     var error: HomeworkError?
 
-    private let firestore = FirestoreService.shared
+    private let firestore = FirestoreHomeworkService.shared
     private let storageService = StorageService.shared
     private var storage: HomeworkStorage?
     private var homeworkListener: ListenerRegistration?

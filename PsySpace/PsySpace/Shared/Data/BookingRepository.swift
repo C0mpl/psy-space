@@ -15,7 +15,8 @@ final class BookingRepository {
     var isLoading = false
     var error: BookingError?
 
-    private let firestore = FirestoreService.shared
+    private let firestore = FirestoreBookingService.shared
+    private let userService = FirestoreUserService.shared
     private var listener: ListenerRegistration?
     private var clientId: String?
 
@@ -170,7 +171,7 @@ final class BookingRepository {
                     booking.creditGivenOnCancel = false
 
                     if usedCredit > 0 {
-                        try? await firestore.addUserCredit(userId: booking.clientId, amount: usedCredit)
+                        try? await userService.addUserCredit(userId: booking.clientId, amount: usedCredit)
                     }
 
                     result = CancellationResult(creditAmount: usedCredit > 0 ? usedCredit : nil, refundedAmount: amount, refundSuccess: true)
@@ -178,7 +179,7 @@ final class BookingRepository {
                     if qualifiesForCompensation {
                         let totalCredit = amount + usedCredit
                         booking.creditGivenOnCancel = true
-                        try? await firestore.addUserCredit(userId: booking.clientId, amount: totalCredit)
+                        try? await userService.addUserCredit(userId: booking.clientId, amount: totalCredit)
                         result = CancellationResult(creditAmount: totalCredit, refundedAmount: nil, refundSuccess: false)
                     }
                 }
@@ -186,19 +187,19 @@ final class BookingRepository {
                 if qualifiesForCompensation {
                     let totalCredit = amount + usedCredit
                     booking.creditGivenOnCancel = true
-                    try? await firestore.addUserCredit(userId: booking.clientId, amount: totalCredit)
+                    try? await userService.addUserCredit(userId: booking.clientId, amount: totalCredit)
                     result = CancellationResult(creditAmount: totalCredit, refundedAmount: nil, refundSuccess: false)
                 }
             }
         } else if refund, usedCredit > 0 {
-            try? await firestore.addUserCredit(userId: booking.clientId, amount: usedCredit)
+            try? await userService.addUserCredit(userId: booking.clientId, amount: usedCredit)
             booking.creditGivenOnCancel = true
             result = CancellationResult(creditAmount: usedCredit, refundedAmount: nil, refundSuccess: true)
         } else if qualifiesForCompensation {
             booking.creditGivenOnCancel = true
             let totalCredit = (booking.paidAmount ?? 0) + usedCredit
             if totalCredit > 0 {
-                try? await firestore.addUserCredit(userId: booking.clientId, amount: totalCredit)
+                try? await userService.addUserCredit(userId: booking.clientId, amount: totalCredit)
                 result = CancellationResult(creditAmount: totalCredit, refundedAmount: nil, refundSuccess: false)
             }
         }
