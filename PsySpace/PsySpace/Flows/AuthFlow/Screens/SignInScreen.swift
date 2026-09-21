@@ -67,7 +67,7 @@ struct SignInScreen: View {
             logoView
 
             VStack(spacing: Spacing.sm) {
-                Text("PsySpace")
+                Text("Стан")
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .foregroundStyle(Color.psyspaceTextPrimary)
 

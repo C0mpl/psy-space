@@ -132,7 +132,7 @@ private struct CancellationAlert: View {
             VStack(spacing: Spacing.md) {
                 Image(systemName: "calendar.badge.exclamationmark")
                     .font(.system(size: 44))
-                    .foregroundStyle(Color.red.opacity(0.8))
+                    .foregroundStyle(Color.psyspaceError)
 
                 Text(notification.title)
                     .font(.title3.weight(.semibold))

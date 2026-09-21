@@ -32,7 +32,7 @@ struct CalendarSettingsView: View {
                         if isEnabled {
                             Text("Підключено")
                                 .font(.caption)
-                                .foregroundStyle(Color.green)
+                                .foregroundStyle(Color.psyspaceSuccess)
                         } else {
                             Text("Не підключено")
                                 .font(.caption)

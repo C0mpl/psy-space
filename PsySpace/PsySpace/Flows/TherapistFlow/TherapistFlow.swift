@@ -64,7 +64,7 @@ struct TherapistFlow: View {
                 .foregroundStyle(selectedTab == tab ? Color.psyspacePrimary : Color.psyspaceTextPrimary)
             }
         }
-        .navigationTitle("PsySpace")
+        .navigationTitle("Стан")
         .listStyle(.sidebar)
     }
 
