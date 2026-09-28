@@ -10,31 +10,80 @@ import SwiftUI
 struct BookingHeader: View {
     let userName: String?
     let nextBooking: Booking?
+    var onNotificationsTap: (() -> Void)?
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            LinearGradient(
-                colors: [
-                    Color.psyspaceBackgroundWarm,
-                    Color.psyspaceBackground
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 140)
+        VStack {
+            // Content
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text(currentDateString)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.psyspaceTextSecondary)
 
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(greetingText)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(Color.psyspaceTextPrimary)
+                    Text(greetingText)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Color.psyspaceTextPrimary)
+                        .tracking(-0.5)
 
-                Text(statusText)
-                    .font(.subheadline)
-                    .foregroundStyle(Color.psyspaceTextSecondary)
+                    HStack(spacing: Spacing.xs) {
+                        Circle()
+                            .fill(Color.psyspaceSecondary)
+                            .frame(width: 8, height: 8)
+
+                        Text(statusText)
+                            .font(.subheadline)
+                            .foregroundStyle(Color.psyspaceTextSecondary)
+                    }
+                    .padding(.top, Spacing.xxs)
+                }
+
+                Spacer()
+
+                if let onNotificationsTap {
+                    Button(action: onNotificationsTap) {
+                        Image(systemName: "bell")
+                            .font(.body)
+                            .foregroundStyle(Color.psyspaceTextPrimary)
+                            .frame(width: 44, height: 44)
+                            .background(Color.psyspaceCardBackground.opacity(0.8))
+                            .clipShape(Circle())
+                            .shadow(color: Color.psyspaceTextPrimary.opacity(0.06), radius: 4, y: 2)
+                    }
+                }
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.bottom, Spacing.md)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.bottom, Spacing.lg)
         }
+        .background {
+            GeometryReader { geo in
+                ZStack(alignment: .topTrailing) {
+                    LinearGradient(
+                        colors: [
+                            Color.psyspaceHighlight,
+                            Color.psyspaceBackground
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .frame(height: geo.size.height + 100)
+                    .offset(y: -100) // Extend into safe area
+
+                    Circle()
+                        .fill(Color.psyspacePrimary.opacity(0.2))
+                        .frame(width: 176, height: 176)
+                        .blur(radius: 40)
+                        .offset(x: 40, y: -56)
+                }
+            }
+        }
+    }
+
+    private var currentDateString: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "uk_UA")
+        formatter.dateFormat = "EEEE, d MMMM"
+        return formatter.string(from: .now).capitalized
     }
 
     private var greetingText: String {
@@ -58,7 +107,7 @@ struct BookingHeader: View {
             } else if days == 1 {
                 return "Наступний сеанс завтра"
             } else {
-                return "Наступний сеанс через \(days) \(dayWord(days))"
+                return "Наступна сесія через \(days) \(dayWord(days))"
             }
         }
         return "Запишіться на сеанс"

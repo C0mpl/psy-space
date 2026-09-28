@@ -439,6 +439,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PsySpace/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Стан";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Стан хоче додавати ваші сеанси терапії до Apple Calendar для зручного нагадування.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Стан використовує Face ID для захисту вашого особистого щоденника.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Стан потребує доступ до мікрофона для запису голосових повідомлень у щоденнику.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -474,6 +477,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = PsySpace/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Стан";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Стан хоче додавати ваші сеанси терапії до Apple Calendar для зручного нагадування.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Стан використовує Face ID для захисту вашого особистого щоденника.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Стан потребує доступ до мікрофона для запису голосових повідомлень у щоденнику.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;

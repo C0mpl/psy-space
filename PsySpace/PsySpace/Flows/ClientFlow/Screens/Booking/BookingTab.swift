@@ -27,12 +27,12 @@ struct BookingTab: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(spacing: Spacing.lg) {
                     BookingHeader(
                         userName: userRepo.currentUser?.name,
-                        nextBooking: myUpcomingBookings.first
+                        nextBooking: myUpcomingBookings.first,
+                        onNotificationsTap: { /* TODO: Navigate to notifications */ }
                     )
-                    .padding(.bottom, Spacing.lg)
 
                     if let nextBooking = myUpcomingBookings.first {
                         NextSessionCard(
@@ -43,22 +43,50 @@ struct BookingTab: View {
                                 bookingToCancel = nextBooking
                             }
                         )
-                        .padding(.horizontal, Spacing.md)
-                        .padding(.bottom, Spacing.lg)
+                        .padding(.horizontal, Spacing.lg)
                     }
 
                     if myUpcomingBookings.count > 1 {
                         otherBookingsSection
-                            .padding(.horizontal, Spacing.md)
-                            .padding(.bottom, Spacing.lg)
+                            .padding(.horizontal, Spacing.lg)
                     }
 
                     bookNewSessionSection
-                        .padding(.horizontal, Spacing.md)
-                        .padding(.bottom, Spacing.xxl)
+                        .padding(.horizontal, Spacing.lg)
+
+                    if !availableSlots.isEmpty {
+                        SimpleTimeSlotGrid(
+                            slots: availableSlots,
+                            selectedSlotId: selectedSlot?.id,
+                            selectedDate: selectedDate,
+                            reduceMotion: reduceMotion
+                        ) { slot in
+                            selectedSlot = slot
+                            showingPaymentSheet = true
+                        }
+                        .padding(.horizontal, Spacing.lg)
+                    } else {
+                        slotSelectionContent
+                            .padding(.horizontal, Spacing.lg)
+                    }
+
+                    if let nextSlot = nextAvailableSlot {
+                        QuickBookCTA {
+                            selectedDate = nextSlot.date
+                            Task { @MainActor in
+                                selectedSlot = nextSlot
+                                showingPaymentSheet = true
+                            }
+                        }
+                        .padding(.horizontal, Spacing.lg)
+                    }
+
+                    Spacer()
+                        .frame(height: Spacing.xxl)
                 }
             }
-            .background(Color.psyspaceBackground)
+            .scrollClipDisabled()
+            .background(Color.psyspaceBackground.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
             .adaptiveSheet(isPresented: $showingPaymentSheet, detents: [.large]) {
@@ -150,20 +178,34 @@ struct BookingTab: View {
 
     private var bookNewSessionSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            HStack {
-                Text("Записатися")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.psyspaceTextPrimary)
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text("Оберіть зручний час")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.psyspaceTextSecondary)
 
-                Spacer()
+                HStack {
+                    Text("Записатися")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Color.psyspaceTextPrimary)
+                        .tracking(-0.5)
 
-                if let nextSlot = nextAvailableSlot {
-                    quickBookButton(nextSlot)
+                    Spacer()
+
+                    if myUpcomingBookings.count > 0 {
+                        Button {
+                            // TODO: Show my bookings list
+                        } label: {
+                            Text("Мої записи")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.psyspacePrimary)
+                        }
+                    }
                 }
             }
 
-            PsySpaceCalendar(
+            MonthlyCalendarView(
                 selectedDate: $selectedDate,
+                bookedDate: myUpcomingBookings.first?.date,
                 isDateAvailable: { date in
                     let weekday = Calendar.current.component(.weekday, from: date)
                     return availabilityRepo.isWorkingDay(weekday)
@@ -175,23 +217,12 @@ struct BookingTab: View {
                     HapticService.selection()
                 }
             }
-
-            slotSelectionContent
         }
     }
 
     @ViewBuilder
     private var slotSelectionContent: some View {
-        if !availableSlots.isEmpty {
-            TimeSlotGrid(
-                slots: availableSlots,
-                selectedSlotId: selectedSlot?.id,
-                reduceMotion: reduceMotion
-            ) { slot in
-                selectedSlot = slot
-                showingPaymentSheet = true
-            }
-        } else if availabilityRepo.isWorkingDay(selectedWeekday) {
+        if availabilityRepo.isWorkingDay(selectedWeekday) {
             NoSlotsView(
                 nextAvailableDate: nextAvailableSlot?.date,
                 selectedDate: selectedDate
@@ -202,28 +233,6 @@ struct BookingTab: View {
             DayOffView(nextAvailableDate: nextAvailableSlot?.date) { date in
                 selectedDate = date
             }
-        }
-    }
-
-    private func quickBookButton(_ nextSlot: TimeSlot) -> some View {
-        Button {
-            selectedDate = nextSlot.date
-            Task { @MainActor in
-                selectedSlot = nextSlot
-                showingPaymentSheet = true
-            }
-        } label: {
-            HStack(spacing: Spacing.xxs) {
-                Image(systemName: "bolt.fill")
-                    .font(.caption)
-                Text("Найближчий час")
-                    .font(.caption.weight(.medium))
-            }
-            .foregroundStyle(Color.psyspacePrimary)
-            .padding(.horizontal, Spacing.sm)
-            .padding(.vertical, Spacing.xxs)
-            .background(Color.psyspacePrimary.opacity(0.1))
-            .clipShape(Capsule())
         }
     }
 
